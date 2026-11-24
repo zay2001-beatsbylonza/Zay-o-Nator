@@ -37,9 +37,9 @@ footer { display: flex; justify-content: space-between; align-items: center; gap
   background: #16181c; color: #8d949e; box-shadow: inset 0 0 0 1px #2c3036; text-transform: uppercase; }
 .chip.on { background: var(--accent); color: #1a1408; box-shadow: 0 0 calc(var(--u) * 1.1) rgba(232,199,122,.5); }
 .by { font-family: 'Libre Baskerville', Georgia, serif; font-style: italic; font-size: calc(var(--u) * 1.5); color: #d7dbe1; letter-spacing: .03em; white-space: nowrap; }
-.tools { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; transition: opacity .4s; z-index: 5; }
+.tools { position: fixed; top: 8px; right: 8px; display: flex; gap: 6px; transition: opacity .4s; z-index: 5; }
 body.idle .tools { opacity: 0; }
-.tools button { font: 12px 'Michroma', sans-serif; letter-spacing: .1em; background: rgba(22,24,28,.85); color: #c9ced6; border: 1px solid #3a3f47; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+.tools button { font: 10px 'Michroma', sans-serif; letter-spacing: .1em; background: rgba(22,24,28,.85); color: #c9ced6; border: 1px solid #3a3f47; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
 .tools button:hover { border-color: var(--accent); color: var(--accent); }
 #panel { position: fixed; top: 60px; right: 12px; width: min(380px, calc(100vw - 24px)); max-height: calc(100vh - 80px); overflow: auto; background: #111317; border: 1px solid #3a3f47; border-radius: 12px; padding: 18px; z-index: 6; display: none; font-size: 12px; letter-spacing: .05em; }
 #panel.open { display: block; }
@@ -120,9 +120,9 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
 </div>
 
 <div class="tools">
-  <button id="btnFace" type="button">NEXT FACE (1–5)</button>
-  <button id="btnSettings" type="button">SETTINGS (S)</button>
-  <button id="btnFull" type="button">FULL SCREEN (F)</button>
+  <button id="btnFace" type="button" title="Next face (keys 1–5)">FACE ›</button>
+  <button id="btnSettings" type="button" title="Settings (S)">SETTINGS</button>
+  <button id="btnFull" type="button" title="Full screen (F)">FULL</button>
 </div>
 
 <div id="panel" role="dialog" aria-label="Settings">
@@ -423,7 +423,7 @@ function readInput() {
     const f0 = FMIN * Math.pow(FMAX / FMIN, i / NPTS), f1 = FMIN * Math.pow(FMAX / FMIN, (i + 1) / NPTS);
     let k0 = Math.max(1, Math.floor(f0 / binHz)), k1 = Math.max(k0 + 1, Math.ceil(f1 / binHz));
     let m = -140; for (let k = k0; k < k1 && k < bufS.length; k++) m = Math.max(m, bufS[k]);
-    bands[i] = m + 4.5 * Math.log2(Math.max(f0, 50) / 1000);   // tilt so highs show like a mastering analyser
+    bands[i] = m + 3 * Math.log2(Math.max(f0, 50) / 1000);   // a gentle tilt so highs show, like a mastering analyser
   }
   return { peak: [pl, pr], rms: [rl, rr], bands };
 }

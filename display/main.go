@@ -186,6 +186,20 @@ func localIP() string {
 	return conn.LocalAddr().(*net.UDPAddr).IP.String()
 }
 
+// alreadyRunning reports whether a ZaY-o-Nator Display answers at url.
+func alreadyRunning(url string) bool {
+	c := http.Client{Timeout: 2 * time.Second}
+	resp, err := c.Get(url + "/api/sources")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	var v struct {
+		Build *string `json:"build"`
+	}
+	return json.NewDecoder(resp.Body).Decode(&v) == nil && v.Build != nil
+}
+
 func openBrowser(url string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
@@ -205,7 +219,6 @@ func main() {
 	flag.Parse()
 
 	h := newHub()
-	go h.listenMeters()
 
 	web, _ := fs.Sub(webFiles, "web")
 	mux := http.NewServeMux()
@@ -218,11 +231,20 @@ func main() {
 
 	// Listen on this computer only: the page uses your audio inputs, so it stays private.
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	url := fmt.Sprintf("http://localhost:%d", *port)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("Can't start on port %d (is ZaY-o-Nator already open?): %v", *port, err)
+		// Still running from before (closing the browser doesn't stop it): just open it again.
+		if alreadyRunning(url) {
+			fmt.Println("ZaY-o-Nator Display is already running. Opening it: " + url)
+			if !*noOpen {
+				openBrowser(url)
+			}
+			return
+		}
+		log.Fatalf("Can't start on port %d (another app is using it): %v", *port, err)
 	}
-	url := fmt.Sprintf("http://localhost:%d", *port)
+	go h.listenMeters()
 	fmt.Println("ZaY-o-Nator Display by BeatsbyLonza (build " + build + ")")
 	fmt.Println("Open: " + url)
 	fmt.Printf("MPCs send meters to %s, port %d\n", localIP(), meterPort)

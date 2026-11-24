@@ -304,7 +304,7 @@ private:
             int k0 = std::max(1, (int)(f0 / binHz)), k1 = std::min(kFft / 2, std::max(k0 + 1, (int)(f1 / binHz) + 1));
             float m = 0.0f;
             for (int k = k0; k < k1; ++k) m = std::max(m, re_[k] * re_[k] + im_[k] * im_[k]);
-            out[b] = 10.0f * std::log10(m * norm * norm + 1e-14f) + 4.5f * std::log2(std::max(f0, 50.0f) / 1000.0f);
+            out[b] = 10.0f * std::log10(m * norm * norm + 1e-14f) + 3.0f * std::log2(std::max(f0, 50.0f) / 1000.0f);
         }
     }
 
