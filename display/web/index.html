@@ -75,6 +75,17 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
 #app.f5 #meters { display: none; }
 #app.f5 #specRow { flex: 1; height: auto; }
 #app.f5 .tower { display: block; }
+/* face 6: showcase a plugin (DRUMS, MASTER, SYNTHS) */
+#show { display: none; flex: 1; min-height: 0; flex-direction: column; gap: calc(var(--u) * 1); }
+#app.f6 #meters, #app.f6 #specRow, #app.f6 #rack { display: none; }
+#app.f6 #show { display: flex; }
+.showHead { display: flex; justify-content: space-between; align-items: center; gap: calc(var(--u) * 1); }
+#showTitle { font-family: 'Libre Baskerville', Georgia, serif; font-style: italic; font-size: calc(var(--u) * 2.8); color: #f1f3f6; letter-spacing: .03em; text-shadow: 0 0 calc(var(--u) * 1.6) rgba(255,255,255,.25); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#showModes { display: flex; gap: calc(var(--u) * .6); }
+.mode { font: inherit; font-size: calc(var(--u) * .9); letter-spacing: .16em; padding: calc(var(--u) * .6) calc(var(--u) * 1.3); border-radius: calc(var(--u) * .45); border: 0; cursor: pointer; background: #16181c; color: #8d949e; box-shadow: inset 0 0 0 1px #2c3036; }
+.mode.on { background: var(--accent); color: #1a1408; box-shadow: 0 0 calc(var(--u) * 1.2) rgba(232,199,122,.5); }
+#showBox { flex: 1; min-height: 0; border-radius: calc(var(--u) * 1); background: #000; box-shadow: inset 0 0 0 2px #2a2e34, 0 0 calc(var(--u) * 4) rgba(241,217,149,.1); overflow: hidden; }
+#showCanvas { width: 100%; height: 100%; display: block; }
 </style>
 </head>
 <body>
@@ -89,6 +100,10 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
     <div class="cell"><div class="vu" id="vuR"></div><div class="peak" id="peakR"></div></div>
   </div>
   <div id="rack"></div>
+  <div id="show">
+    <div class="showHead"><div id="showTitle">Plugin Showcase</div><div id="showModes"></div></div>
+    <div id="showBox"><canvas id="showCanvas" aria-label="Showcase visualizer"></canvas></div>
+  </div>
   <div id="specRow">
   <div class="tower" id="towerL"></div>
   <div id="specBox">
@@ -146,6 +161,8 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
   <div class="row"><input id="chkLive" type="checkbox"><label for="chkLive">Show LIVE badge</label></div>
   <div class="row"><input id="chkChips" type="checkbox"><label for="chkChips">Show source buttons</label></div>
   <div class="row"><input id="chkFaces" type="checkbox"><label for="chkFaces">Show face buttons</label></div>
+  <label for="txtShow">Showcase title (face 6), for example the plugin you're showing</label>
+  <input id="txtShow" type="text" maxlength="40" placeholder="Plugin Showcase">
   <div class="row"><input id="chkCycle" type="checkbox"><label for="chkCycle">Change face every 30 seconds</label></div>
   <p id="msg"></p>
   <p>Tip: in StreamYard, share this window, or put it full screen on your extra monitor and point a camera at it. The mouse and buttons hide after 3 seconds.</p>
@@ -157,8 +174,8 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const store = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const saved = (() => { try { return JSON.parse(store.getItem('zayonator') || '{}'); } catch (e) { return {}; } })();
-const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false, ref: 10 }, saved);
-const FACES = ['DUO', 'SPECTRUM', 'NEEDLES', 'RACK', 'CONSOLE'];
+const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false, ref: 10, showTitle: '', showMode: 'drums' }, saved);
+const FACES = ['DUO', 'SPECTRUM', 'NEEDLES', 'RACK', 'CONSOLE', 'SHOWCASE'];
 function save() { try { store.setItem('zayonator', JSON.stringify(S)); } catch (e) {} }
 
 // ---------- the VU meter (same face as the design) ----------
@@ -395,7 +412,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 's' || e.key === 'S') togglePanel();
   if (e.key === 'f' || e.key === 'F') toggleFull();
   if (e.key === 'Escape') $('panel').classList.remove('open');
-  if (e.key >= '1' && e.key <= '5') { setFace(+e.key); restartCycle(); }
+  if (e.key >= '1' && e.key <= '6') { setFace(+e.key); restartCycle(); }
+  if (S.face === 6 && (e.key === 'd' || e.key === 'D')) setMode('drums');
+  if (S.face === 6 && (e.key === 'm' || e.key === 'M')) setMode('master');
+  if (S.face === 6 && (e.key === 'y' || e.key === 'Y')) setMode('synths');
   if (e.key === 'ArrowRight' || e.key === ' ') { setFace(S.face + 1); restartCycle(); }
   if (e.key === 'ArrowLeft') { setFace(S.face - 1); restartCycle(); }
 });
@@ -474,6 +494,7 @@ function frameLoop(now) {
   });
   if (S.face === 5) { setPeak(towers[0], d.peak[0], now, dt); setPeak(towers[1], d.peak[1], now, dt); }
   else if (S.face !== 4) { setPeak(peaks[0], d.peak[0], now, dt); setPeak(peaks[1], d.peak[1], now, dt); }
+  if (S.face === 6) drawShow(d, dt, now);
   if (S.face === 4) {
     for (const r of rackTiles) {
       const rd = r.src === S.source ? d : r.src.startsWith('mpc:') ? readMpc(r.src.slice(4)) : d;
@@ -508,6 +529,181 @@ function frameLoop(now) {
   $('specPath').setAttribute('d', path); $('specGlowPath').setAttribute('d', path); $('specLine').setAttribute('d', line || 'M0 260');
   requestAnimationFrame(frameLoop);
 }
+// ---------- face 6: SHOWCASE (DRUMS, MASTER, SYNTHS) ----------
+const MODES = [['drums', 'DRUMS'], ['master', 'MASTER'], ['synths', 'SYNTHS']];
+function setMode(m) {
+  S.showMode = m; save();
+  $('showModes').replaceChildren(...MODES.map(([v, t]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mode' + (v === S.showMode ? ' on' : ''); b.textContent = t;
+    b.onclick = () => setMode(v); return b;
+  }));
+}
+function showTitle() { $('showTitle').textContent = S.showTitle || 'Plugin Showcase'; }
+const sc = $('showCanvas'), g = sc.getContext('2d');
+let scW = 0, scH = 0;
+function fitCanvas() {
+  const r = sc.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (w !== sc.width || h !== sc.height) { sc.width = w; sc.height = h; g.fillStyle = '#000'; g.fillRect(0, 0, w, h); }
+  scW = w; scH = h;
+}
+const bandIdx = (f) => Math.max(0, Math.min(NPTS - 1, Math.round(NPTS * Math.log(f / FMIN) / Math.log(FMAX / FMIN))));
+function bandEnergy(f0, f1) { let m = -140; for (let i = bandIdx(f0); i <= bandIdx(f1); i++) m = Math.max(m, spec[i]); return m; }
+const heat = (h) => h > 0.8 ? '#ff3b30' : h > 0.6 ? '#ffd23f' : '#2fd36b';
+// the waveform: the real one from an audio input, else made up from the level so it still moves
+let synthPhase = 0;
+function waveform(d, dt, n) {
+  const L = new Float32Array(n), R = new Float32Array(n);
+  if (S.source === 'input' && bufL && anaL) {
+    const step = bufL.length / n;
+    for (let i = 0; i < n; i++) { L[i] = bufL[Math.floor(i * step)]; R[i] = bufR[Math.floor(i * step)]; }
+  } else {
+    const a = Math.pow(10, Math.max(-60, (d.rms[0] + d.rms[1]) / 2) / 20) * 1.6;
+    synthPhase += dt * 2;
+    for (let i = 0; i < n; i++) {
+      const t = i / n * Math.PI * 8 + synthPhase;
+      L[i] = a * (Math.sin(t) + 0.45 * Math.sin(2.02 * t + 1) + 0.2 * Math.sin(5.1 * t));
+      R[i] = a * (Math.sin(t + 0.35) + 0.4 * Math.sin(2.02 * t + 1.4) + 0.2 * Math.sin(4.9 * t));
+    }
+  }
+  return [L, R];
+}
+function glowLine(pts, colour, width, blur) {
+  g.save(); g.strokeStyle = colour; g.lineWidth = width; g.lineJoin = 'round'; g.shadowColor = colour; g.shadowBlur = blur;
+  g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.restore();
+}
+function roundRect(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
+
+// DRUMS: hits light the pads like an MPC; the kick pumps the ring
+const lanes = [
+  { name: 'KICK', f: [35, 110], colour: '#ff3b30', row: 3 },
+  { name: 'SNARE', f: [160, 450], colour: '#ffd23f', row: 2 },
+  { name: 'PERC', f: [600, 3000], colour: '#ff8a3d', row: 1 },
+  { name: 'HATS', f: [7000, 16000], colour: '#2fd36b', row: 0 }
+].map((l) => Object.assign(l, { avg: -90, env: 0, cool: 0 }));
+const pads = Array.from({ length: 16 }, () => ({ v: 0, colour: '#2fd36b' }));
+function drawDrums(dt) {
+  g.fillStyle = '#000'; g.fillRect(0, 0, scW, scH);
+  for (const l of lanes) {
+    const e = bandEnergy(l.f[0], l.f[1]);
+    l.cool -= dt;
+    if (e - l.avg > 5 && e > -75 && l.cool <= 0) {   // a hit: louder than this lane's recent average
+      l.env = 1; l.cool = 0.09;
+      const p = pads[l.row * 4 + Math.floor(Math.random() * 4)]; p.v = 1; p.colour = l.colour;
+    }
+    l.avg += (e - l.avg) * Math.min(1, dt * 4);
+    l.env = Math.max(0, l.env - dt * 3.5);
+  }
+  pads.forEach((p) => { p.v = Math.max(0, p.v - dt * 2.6); });
+  const kick = lanes[0];
+  // kick ring on the left
+  const cx = scW * 0.27, cy = scH * 0.5, R = Math.min(scW * 0.2, scH * 0.38);
+  g.save();
+  g.lineWidth = R * 0.08; g.strokeStyle = '#2a0b09'; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+  g.shadowColor = '#ff3b30'; g.shadowBlur = 20 + 60 * kick.env;
+  g.strokeStyle = `rgba(255,59,48,${0.35 + 0.65 * kick.env})`; g.lineWidth = R * (0.08 + 0.1 * kick.env);
+  g.beginPath(); g.arc(cx, cy, R * (0.82 + 0.18 * kick.env), 0, Math.PI * 2); g.stroke();
+  g.fillStyle = `rgba(255,59,48,${0.08 + 0.25 * kick.env})`; g.beginPath(); g.arc(cx, cy, R * 0.7 * (0.85 + 0.15 * kick.env), 0, Math.PI * 2); g.fill();
+  g.restore();
+  g.fillStyle = '#e8c77a'; g.font = `${Math.round(R * 0.16)}px Michroma, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('KICK', cx, cy);
+  // 4x4 pads on the right, MPC style: hats on top, kicks on the bottom row
+  const gx = scW * 0.5, gw = scW * 0.44, gap = gw * 0.04, pw = (gw - 3 * gap) / 4;
+  const ph = Math.min(pw, (scH * 0.86 - 3 * gap) / 4), gy = (scH - (4 * ph + 3 * gap)) / 2;
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    const p = pads[r * 4 + c], x = gx + c * (pw + gap), y = gy + r * (ph + gap);
+    g.save();
+    roundRect(x, y, pw, ph, ph * 0.08); g.fillStyle = '#0d0e10'; g.fill();
+    if (p.v > 0.01) { g.shadowColor = p.colour; g.shadowBlur = 40 * p.v; g.globalAlpha = 0.25 + 0.75 * p.v; g.fillStyle = p.colour; roundRect(x, y, pw, ph, ph * 0.08); g.fill(); }
+    g.globalAlpha = 1; g.shadowBlur = 0; g.lineWidth = Math.max(1, ph * 0.03); g.strokeStyle = p.v > 0.01 ? p.colour : '#2c3036'; roundRect(x, y, pw, ph, ph * 0.08); g.stroke();
+    g.restore();
+  }
+  g.font = `${Math.round(ph * 0.15)}px Michroma, sans-serif`; g.textAlign = 'right';
+  lanes.forEach((l) => { g.fillStyle = l.colour; g.fillText(l.name, gx - gap, gy + l.row * (ph + gap) + ph / 2); });
+}
+
+// MASTER: stereo vectorscope, big numbers, correlation
+let corr = 1, mPeak = -120, mRms = -120;
+function drawMaster(d, dt) {
+  g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, 0, scW, scH);   // trails
+  const [L, R] = waveform(d, dt, 512);
+  const size = Math.min(scW * 0.45, scH * 0.9), cx = scW * 0.28, cy = scH / 2, k = size * 0.45;
+  g.save(); g.strokeStyle = '#1d3b50'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx - k, cy); g.lineTo(cx + k, cy); g.moveTo(cx, cy - k); g.lineTo(cx, cy + k);
+  g.moveTo(cx - k * .7, cy - k * .7); g.lineTo(cx + k * .7, cy + k * .7); g.moveTo(cx + k * .7, cy - k * .7); g.lineTo(cx - k * .7, cy + k * .7); g.stroke();
+  g.beginPath(); g.arc(cx, cy, k, 0, Math.PI * 2); g.stroke(); g.restore();
+  g.save(); g.fillStyle = S.accent; g.shadowColor = S.accent; g.shadowBlur = 8;
+  let sLR = 0, sLL = 0, sRR = 0;
+  for (let i = 0; i < L.length; i++) {
+    const x = (R[i] - L[i]) * 0.707, y = (L[i] + R[i]) * 0.707;
+    g.fillRect(cx + x * k * 1.4, cy - y * k * 1.4, 2, 2);
+    sLR += L[i] * R[i]; sLL += L[i] * L[i]; sRR += R[i] * R[i];
+  }
+  g.restore();
+  const c = sLL > 1e-9 && sRR > 1e-9 ? sLR / Math.sqrt(sLL * sRR) : 1;
+  corr += (c - corr) * Math.min(1, dt * 4);
+  mPeak = Math.max(Math.max(d.peak[0], d.peak[1]), mPeak - 12 * dt);
+  mRms += ((d.rms[0] + d.rms[1]) / 2 - mRms) * Math.min(1, dt * 1.5);
+  // numbers and bars on the right
+  g.fillStyle = 'rgba(0,0,0,0.9)'; g.fillRect(scW * 0.55, 0, scW * 0.45, scH);
+  const x0 = scW * 0.58, w = scW * 0.38, u = scH / 100;
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  const big = (label, val, y, colour) => {
+    g.fillStyle = '#8d949e'; g.font = `${Math.round(u * 3.2)}px Michroma, sans-serif`; g.fillText(label, x0, y);
+    g.fillStyle = colour; g.font = `${Math.round(u * 11)}px Michroma, sans-serif`; g.fillText(val, x0, y + u * 12.5);
+  };
+  big('PEAK', mPeak > -100 ? mPeak.toFixed(1) + ' dB' : '—', u * 12, mPeak > -1 ? '#ff3b30' : mPeak > -6 ? '#ffd23f' : '#2fd36b');
+  big('RMS', mRms > -100 ? mRms.toFixed(1) + ' dB' : '—', u * 38, '#f1f3f6');
+  g.fillStyle = '#8d949e'; g.font = `${Math.round(u * 3.2)}px Michroma, sans-serif`; g.fillText('STEREO CORRELATION', x0, u * 66);
+  roundRect(x0, u * 69, w, u * 5, u); g.fillStyle = '#16181c'; g.fill();
+  const cxBar = x0 + w * (corr + 1) / 2;
+  g.save(); g.fillStyle = corr < 0 ? '#ff3b30' : corr < 0.3 ? '#ffd23f' : '#2fd36b'; g.shadowColor = g.fillStyle; g.shadowBlur = 12;
+  g.fillRect(Math.min(x0 + w / 2, cxBar), u * 69, Math.abs(cxBar - (x0 + w / 2)), u * 5); g.restore();
+  g.fillStyle = '#6b727c'; g.font = `${Math.round(u * 2.4)}px Michroma, sans-serif`;
+  g.fillText('-1', x0, u * 79); g.textAlign = 'center'; g.fillText('0', x0 + w / 2, u * 79); g.textAlign = 'right'; g.fillText('+1', x0 + w, u * 79);
+  g.textAlign = 'left';
+  ['L', 'R'].forEach((s2, i) => {
+    const y = u * (84 + i * 7), lv = Math.max(0, Math.min(1, (d.rms[i] + 60) / 60));
+    g.fillStyle = '#8d949e'; g.fillText(s2, x0, y + u * 4);
+    roundRect(x0 + u * 4, y, w - u * 4, u * 4.5, u); g.fillStyle = '#16181c'; g.fill();
+    g.fillStyle = heat(lv); g.fillRect(x0 + u * 4, y, (w - u * 4) * lv, u * 4.5);
+  });
+}
+
+// SYNTHS: a glowing scope with a ring of spectrum around it
+let ringRot = 0;
+function drawSynths(d, dt) {
+  g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 0, scW, scH);
+  const cx = scW / 2, cy = scH / 2, R = Math.min(scW, scH) * 0.3;
+  ringRot += dt * 0.15;
+  g.save(); g.lineCap = 'round';
+  for (let i = 0; i < NPTS; i++) {
+    const h = Math.max(0, Math.min(1, (spec[i] + 90) / 80));
+    for (const side of [1, -1]) {
+      const a = ringRot + side * (i / NPTS) * Math.PI - Math.PI / 2;
+      const r1 = R * 1.02, r2 = R * (1.04 + 0.6 * h);
+      g.strokeStyle = heat(h); g.shadowColor = heat(h); g.shadowBlur = 10; g.lineWidth = Math.max(2, R * 0.018);
+      g.beginPath(); g.moveTo(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a)); g.lineTo(cx + r2 * Math.cos(a), cy + r2 * Math.sin(a)); g.stroke();
+    }
+  }
+  g.restore();
+  const [L] = waveform(d, dt, 400);
+  const pts = [];
+  for (let i = 0; i < L.length; i++) pts.push([cx - R * 0.92 + (i / (L.length - 1)) * R * 1.84, cy - L[i] * R * 0.75]);
+  glowLine(pts, '#7cc4ef', Math.max(2, R * 0.012), 18);
+  glowLine(pts, '#eef5fb', Math.max(1, R * 0.004), 4);
+}
+
+function drawShow(d, dt) {
+  fitCanvas();
+  if (S.showMode === 'master') drawMaster(d, dt);
+  else if (S.showMode === 'synths') drawSynths(d, dt);
+  else drawDrums(dt);
+}
+setMode(S.showMode); showTitle();
+$('txtShow').value = S.showTitle;
+$('txtShow').oninput = (e) => { S.showTitle = e.target.value.trim(); save(); showTitle(); };
+
 requestAnimationFrame(frameLoop);
 // Some browsers only start audio after a click
 document.addEventListener('click', () => { if (ctx && ctx.state === 'suspended') ctx.resume(); });
