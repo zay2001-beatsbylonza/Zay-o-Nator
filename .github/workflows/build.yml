@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: open-mpc/mpc-vst-plugins
-          ref: 8ace10a277784689c6d0e3281c0e8d6ddc14e220
+          ref: be72c8ee9889616174315d3026fa5a9d07c3b04b
           path: openmpc
       - name: Make and check the catalog release zips
         run: |
