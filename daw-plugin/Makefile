@@ -4,6 +4,7 @@
 #   git clone --recursive https://github.com/DISTRHO/DPF ../dpf
 #   make                         # this computer's processor
 #   make macos-universal-10.15   # Apple Silicon and Intel in one
+#   make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++-posix   # Windows VST3, from Linux
 
 NAME = ZaY-o-Nator
 DPF_PATH ?= ../dpf
@@ -21,6 +22,11 @@ FontSerifItalic.hpp: fonts/DejaVuSerif-Italic.ttf
 open(sys.argv[2],'w').write('// generated from %s\n#pragma once\nstatic const unsigned char kFontSerifItalic[] = {%s};\nstatic const unsigned int kFontSerifItalicSize = %d;\n' % (sys.argv[1], ','.join(str(b) for b in d), len(d)))" $< $@
 
 $(BUILD_DIR)/ZayONatorUI.cpp.o: FontSerifItalic.hpp
+
+# Windows: the meters go out over Winsock
+ifeq ($(WINDOWS),true)
+LINK_FLAGS += -lws2_32
+endif
 
 TARGETS = vst3
 ifeq ($(MACOS),true)

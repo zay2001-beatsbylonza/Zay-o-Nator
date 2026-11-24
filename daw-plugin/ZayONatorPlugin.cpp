@@ -10,13 +10,31 @@
 //
 // Parameter order is FROZEN once released (saved sessions store it).
 
-#include "DistrhoPlugin.hpp"
-#include "ZayONatorShared.hpp"
-
+// Sockets first: on Windows winsock2.h has to come before anything that pulls in windows.h
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+typedef SOCKET zay_socket;
+static const zay_socket kNoSocket = INVALID_SOCKET;
+static void zayCloseSocket(zay_socket s) { closesocket(s); }
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+typedef int zay_socket;
+static const zay_socket kNoSocket = -1;
+static void zayCloseSocket(zay_socket s) { close(s); }
+#endif
+
+#include "DistrhoPlugin.hpp"
+#include "ZayONatorShared.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -63,7 +81,7 @@ protected:
     const char* getMaker() const override { return "BeatsbyLonza"; }
     const char* getHomePage() const override { return "https://github.com/zay2001-beatsbylonza/Zay-o-Nator"; }
     const char* getLicense() const override { return "MIT"; }
-    uint32_t getVersion() const override { return d_version(1, 1, 2); }
+    uint32_t getVersion() const override { return d_version(1, 1, 3); }
 
     void initAudioPort(bool input, uint32_t index, AudioPort& port) override
     {
@@ -158,13 +176,20 @@ private:
         }
         wake_.notify_all();
         if (worker_.joinable()) worker_.join();
-        if (sock_ >= 0) { close(sock_); sock_ = -1; }
+        if (sock_ != kNoSocket) { zayCloseSocket(sock_); sock_ = kNoSocket; }
+#ifdef _WIN32
+        if (wsa_) { WSACleanup(); wsa_ = false; }
+#endif
     }
 
     void work()
     {
+#ifdef _WIN32
+        WSADATA wd;
+        wsa_ = WSAStartup(MAKEWORD(2, 2), &wd) == 0;
+#endif
         sock_ = socket(AF_INET, SOCK_DGRAM, 0);
-        if (sock_ >= 0) { int yes = 1; setsockopt(sock_, SOL_SOCKET, SO_BROADCAST, &yes, sizeof yes); }
+        if (sock_ != kNoSocket) { int yes = 1; setsockopt(sock_, SOL_SOCKET, SO_BROADCAST, (const char*)&yes, sizeof yes); }
         uint32_t read = write_.load(std::memory_order_acquire);
         float bands[kBands];
         while (true)
@@ -211,7 +236,7 @@ private:
     // One packet to this computer (the display is usually here) and one broadcast (a display on another computer).
     bool send(const float* peakDb, const float* rmsDb, const float* bands)
     {
-        if (sock_ < 0) return false;
+        if (sock_ == kNoSocket) return false;
         const int name = std::min(kNames - 1, std::max(0, (int)std::lround(values_[kName])));
         char buf[1024];
         int len = std::snprintf(buf, sizeof buf, "ZAYO1|DAW %s|%.1f|%.1f|%.1f|%.1f|", kNameLabels[name],
@@ -224,9 +249,9 @@ private:
         to.sin_family = AF_INET;
         to.sin_port = htons(kPort);
         to.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        const bool local = sendto(sock_, buf, (size_t)len, 0, (const sockaddr*)&to, sizeof to) == len;
+        const bool local = sendto(sock_, buf, len, 0, (const sockaddr*)&to, sizeof to) == len;
         to.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-        sendto(sock_, buf, (size_t)len, 0, (const sockaddr*)&to, sizeof to);   // fine if the network says no
+        sendto(sock_, buf, len, 0, (const sockaddr*)&to, sizeof to);   // fine if the network says no
         return local;
     }
 
@@ -295,7 +320,10 @@ private:
     std::condition_variable wake_;
     bool stop_ = false;
     std::thread worker_;
-    int sock_ = -1;
+    zay_socket sock_ = kNoSocket;
+#ifdef _WIN32
+    bool wsa_ = false;
+#endif
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZayONatorPlugin)
 };

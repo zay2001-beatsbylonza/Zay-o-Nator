@@ -119,10 +119,58 @@ jobs:
           name: ZaY-o-Nator-DAW-Plugins-Mac
           path: dist/ZaY-o-Nator-DAW-Plugins-Mac.zip
 
+  # The DAW plugin for Windows: VST3, 64-bit, built on Linux with MinGW (everything linked in, no extra DLLs).
+  daw-plugin-windows:
+    runs-on: ubuntu-24.04
+    env:
+      DPF_COMMIT: 4238e1c7f0351bbe488d79f0899c540543ac7583
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get MinGW and DPF
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq g++-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix zip
+          git clone https://github.com/DISTRHO/DPF dpf
+          git -C dpf checkout "$DPF_COMMIT"
+          git -C dpf submodule update --init --recursive
+      - name: Build the Windows VST3
+        working-directory: daw-plugin
+        run: |
+          make vst3 DPF_PATH=../dpf NOOPT=true -j4 \
+            CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix \
+            AR=x86_64-w64-mingw32-ar WINDRES=x86_64-w64-mingw32-windres
+          find bin -type f
+          x86_64-w64-mingw32-objdump -p bin/ZaY-o-Nator.vst3/Contents/x86_64-win/ZaY-o-Nator.vst3 | grep "DLL Name"
+      - name: Package
+        run: |
+          mkdir -p "dist/ZaY-o-Nator DAW Plugin (Windows)"
+          cp -R daw-plugin/bin/ZaY-o-Nator.vst3 "daw-plugin/Install ZaY-o-Nator (Windows).bat" daw-plugin/README.md LICENSE "dist/ZaY-o-Nator DAW Plugin (Windows)/"
+          (cd dist && zip -qr ZaY-o-Nator-DAW-Plugin-Windows.zip "ZaY-o-Nator DAW Plugin (Windows)")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZaY-o-Nator-DAW-Plugin-Windows
+          path: dist/ZaY-o-Nator-DAW-Plugin-Windows.zip
+
+  # Load the Windows VST3 on a real Windows machine: it must open with no missing DLLs, and start sending meters with Send on.
+  daw-plugin-windows-test:
+    needs: daw-plugin-windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ZaY-o-Nator-DAW-Plugin-Windows
+      - name: Load the plugin and ask for its factory
+        shell: pwsh
+        run: |
+          Expand-Archive ZaY-o-Nator-DAW-Plugin-Windows.zip -DestinationPath w
+          $dll = Resolve-Path "w/ZaY-o-Nator DAW Plugin (Windows)/ZaY-o-Nator.vst3/Contents/x86_64-win/ZaY-o-Nator.vst3"
+          python -c "import ctypes,sys; d=ctypes.WinDLL(sys.argv[1]); f=d.GetPluginFactory; f.restype=ctypes.c_void_p; p=f(); print('factory', hex(p or 0)); sys.exit(0 if p else 1)" $dll
+
   # Publish a release on GitHub (tag like v1.0.0) and this attaches the downloads to it.
   release:
     if: github.event_name == 'release'
-    needs: [plugin, daw-plugin]
+    needs: [plugin, daw-plugin, daw-plugin-windows-test]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -134,4 +182,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Release/*.zip art/ZaY-o-Nator-DAW-Plugins-Mac/*.zip
+        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Release/*.zip art/ZaY-o-Nator-DAW-Plugins-Mac/*.zip art/ZaY-o-Nator-DAW-Plugin-Windows/*.zip

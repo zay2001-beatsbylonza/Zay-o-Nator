@@ -1,16 +1,24 @@
-# ZaY-o-Nator for your DAW (VST3 and AU)
+# ZaY-o-Nator for your DAW (VST3 and AU, Mac and Windows)
 
-The ZaY-o-Nator VU meters, LED peak meters and spectrum inside Logic, Ableton, Studio One, the MPC software or any DAW that loads VST3 or AU plugins on a Mac. Everything runs in the plugin window. By BeatsbyLonza.
+The ZaY-o-Nator VU meters, LED peak meters and spectrum inside Logic, Ableton, Studio One, the MPC software FL Studio or any DAW that loads VST3 plugins on a Mac or Windows PC (and AU on the Mac). Everything runs in the plugin window. By BeatsbyLonza.
 
 The sound passes straight through, so you can put it on any track or on the master.
 
-## Install
+## Install on a Mac
 
 1. Download **ZaY-o-Nator-DAW-Plugins-Mac.zip** from the [latest release](../../../releases/latest) and unzip it.
 2. Double-click **Install ZaY-o-Nator Plugins.command**. The first time, right-click it and choose **Open**. It copies the plugins into your user's `Library/Audio/Plug-Ins/VST3` and `Library/Audio/Plug-Ins/Components` folders.
 3. Restart your DAW, or rescan plugins. ZaY-o-Nator shows up under **BeatsbyLonza**.
 
 It runs natively on Apple Silicon and Intel Macs.
+
+## Install on Windows
+
+1. Download **ZaY-o-Nator-DAW-Plugin-Windows.zip** from the [latest release](../../../releases/latest) and unzip it (right-click, **Extract All**).
+2. Double-click **Install ZaY-o-Nator (Windows).bat** and say **Yes** when Windows asks for permission. If Windows shows "Windows protected your PC", click **More info**, then **Run anyway**. It copies **ZaY-o-Nator.vst3** into `C:\Program Files\Common Files\VST3`.
+3. Restart your DAW, or rescan plugins. ZaY-o-Nator shows up under **BeatsbyLonza**.
+
+Or copy the **ZaY-o-Nator.vst3** folder into `C:\Program Files\Common Files\VST3` yourself. Windows 10 and 11, 64-bit.
 
 ## Use
 
@@ -30,6 +38,6 @@ The window can be resized: drag its corner.
 
 ## Notes
 
-- With SEND on, it sends small meter packets (levels, 32 spectrum bands and drum hits, never audio) on UDP port 47911, to this Mac and your local network. SEND is off until you turn it on.
+- With SEND on, it sends small meter packets (levels, 32 spectrum bands and drum hits, never audio) on UDP port 47911, to this computer and your local network. SEND is off until you turn it on.
 - Built with DPF (DISTRHO Plugin Framework, ISC licence). The title font is DejaVu Serif Italic (see `fonts/DejaVu-LICENSE.txt`).
-- Not notarized by Apple yet. The installer lifts the download quarantine for these two plugins only.
+- Not code-signed yet: on the Mac the installer lifts the download quarantine for these two plugins only; on Windows, SmartScreen may ask before the installer runs.
