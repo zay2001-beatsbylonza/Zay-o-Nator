@@ -1,0 +1,22 @@
+{
+  "pages": [
+    {
+      "name": "METERS",
+      "controls": [
+        "empty", "empty", "empty", "empty",
+        "empty", "empty", "empty", "empty",
+        "empty", "empty", "empty", "empty",
+        { "param": "0 VU", "widget": "slider" },
+        { "param": "Left Meter", "widget": "slider" },
+        { "param": "Right Meter", "widget": "slider" },
+        { "param": "Send", "widget": "switch" }
+      ]
+    }
+  ],
+  "style": {
+    "background": "ff0b0c0f",
+    "accent": "ffe8c77a",
+    "text": "ffe8c77a",
+    "muted": "ff8d949e"
+  }
+}

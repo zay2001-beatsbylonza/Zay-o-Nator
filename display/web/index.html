@@ -139,6 +139,8 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
   <select id="selLookL"><option value="classic">Classic cream</option><option value="noir">Noir amber</option></select>
   <label for="selLookR">Right meter</label>
   <select id="selLookR"><option value="classic">Classic cream</option><option value="noir">Noir amber</option></select>
+  <label for="selRef">0 VU level (loud beats: -10)</label>
+  <select id="selRef"><option value="18">-18 dBFS</option><option value="14">-14 dBFS</option><option value="10">-10 dBFS</option></select>
   <label for="selAccent">Accent</label>
   <select id="selAccent"><option value="#e8c77a">Gold</option><option value="#7fb3d5">Blue</option><option value="#e05a4f">Red</option></select>
   <div class="row"><input id="chkLive" type="checkbox"><label for="chkLive">Show LIVE badge</label></div>
@@ -155,7 +157,7 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const store = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const saved = (() => { try { return JSON.parse(store.getItem('zayonator') || '{}'); } catch (e) { return {}; } })();
-const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false }, saved);
+const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false, ref: 10 }, saved);
 const FACES = ['DUO', 'SPECTRUM', 'NEEDLES', 'RACK', 'CONSOLE'];
 function save() { try { store.setItem('zayonator', JSON.stringify(S)); } catch (e) {} }
 
@@ -199,7 +201,7 @@ function vuSVG(id, side, lookName) {
   <path d="M 14 14 L 200 14 L 90 176 L 14 176 Z" fill="url(#${id}g)"/>
 </svg>`;
 }
-// VU reading (0 VU = -18 dBFS) to needle angle, along the printed scale
+// VU reading (0 VU = S.ref below full scale; -10 dBFS by default so loud beats swing around 0) to needle angle, along the printed scale
 function vuAngle(vu) {
   if (vu <= MARKS[0][0]) return Math.max(-52, MARKS[0][1] + (vu - MARKS[0][0]) * 0.6);
   for (let i = 1; i < MARKS.length; i++) {
@@ -381,6 +383,7 @@ $('selLookR').onchange = (e) => { S.lookR = e.target.value; save(); drawMeters()
 $('chkFaces').checked = S.faces; $('chkFaces').onchange = (e) => { S.faces = e.target.checked; save(); setFace(S.face); };
 $('chkCycle').checked = S.cycle; $('chkCycle').onchange = (e) => { S.cycle = e.target.checked; save(); restartCycle(); };
 $('btnFace').onclick = () => { setFace(S.face + 1); restartCycle(); };
+$('selRef').value = String(S.ref); $('selRef').onchange = (e) => { S.ref = +e.target.value; save(); };
 $('selAccent').onchange = (e) => { S.accent = e.target.value; save(); applyLook(); };
 $('chkLive').checked = S.live; $('chkLive').onchange = (e) => { S.live = e.target.checked; save(); applyLook(); };
 $('chkChips').checked = S.chips; $('chkChips').onchange = (e) => { S.chips = e.target.checked; save(); renderSources(); };
@@ -467,7 +470,7 @@ function frameLoop(now) {
   const k = 1 - Math.exp(-dt / 0.3);
   ['vln', 'vrn'].forEach((id, c) => {
     vuState[c] += (d.rms[c] - vuState[c]) * k;
-    const el = $(id); if (el) el.setAttribute('transform', `rotate(${vuAngle(vuState[c] + 18).toFixed(2)} 150 182)`);
+    const el = $(id); if (el) el.setAttribute('transform', `rotate(${vuAngle(vuState[c] + S.ref).toFixed(2)} 150 182)`);
   });
   if (S.face === 5) { setPeak(towers[0], d.peak[0], now, dt); setPeak(towers[1], d.peak[1], now, dt); }
   else if (S.face !== 4) { setPeak(peaks[0], d.peak[0], now, dt); setPeak(peaks[1], d.peak[1], now, dt); }
@@ -475,8 +478,8 @@ function frameLoop(now) {
     for (const r of rackTiles) {
       const rd = r.src === S.source ? d : r.src.startsWith('mpc:') ? readMpc(r.src.slice(4)) : d;
       for (let c = 0; c < 2; c++) r.v[c] += (rd.rms[c] - r.v[c]) * k;
-      if (r.nl) r.nl.setAttribute('transform', `rotate(${vuAngle(r.v[0] + 18).toFixed(2)} 150 182)`);
-      if (r.nr) r.nr.setAttribute('transform', `rotate(${vuAngle(r.v[1] + 18).toFixed(2)} 150 182)`);
+      if (r.nl) r.nl.setAttribute('transform', `rotate(${vuAngle(r.v[0] + S.ref).toFixed(2)} 150 182)`);
+      if (r.nr) r.nr.setAttribute('transform', `rotate(${vuAngle(r.v[1] + S.ref).toFixed(2)} 150 182)`);
     }
   }
 

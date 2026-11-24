@@ -51,10 +51,69 @@ jobs:
           name: ZaY-o-Nator-Display
           path: dist/*.zip
 
+  # The MPC plugin, built with Akai's MPC Plugin SDK for Gen1 (arm32) and Gen2 (arm64) MPCs.
+  plugin:
+    runs-on: ubuntu-24.04
+    env:
+      SDK_COMMIT: febd2ca5bd9eb16c4a412837196e145566bc981b   # Akai MPC Plugin SDK, the version GPP Link ships with
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Akai's MPC Plugin SDK
+        uses: actions/checkout@v4
+        with:
+          repository: inmusic-software/mpc-plugin-builder-sdk
+          ref: ${{ env.SDK_COMMIT }}
+          path: sdk
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Build the plugin for Gen1 (arm32) and Gen2 (arm64)
+        run: python sdk/tools/build.py mpc-plugin
+      - name: SDK host simulator test
+        run: sdk/.sdk-tools/host_sim mpc-plugin/build/native/zay-o-nator.so test --wav mpc-plugin/build/test.wav
+      - name: Plugin in a pretend MPC, sending to a real ZaY-o-Nator Display
+        run: |
+          (cd display && go build -o ../zd .)
+          c++ -std=c++17 -Wall -Wextra -O1 -Isdk/framework tests/plugin_host_test.cpp -ldl -lpthread -o plugin_host_test
+          sh tests/plugin_test.sh ./zd ./plugin_host_test mpc-plugin/build/native/zay-o-nator.so
+      - name: Package
+        run: python sdk/tools/package.py mpc-plugin --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZaY-o-Nator-MPC-Plugin
+          path: dist/*.zip
+      # The Open MPC catalog's release zips (one per MPC generation, plus Akai's one-folder SDK zip), checked by the catalog's own tools.
+      - name: Get Open MPC's release tools
+        uses: actions/checkout@v4
+        with:
+          repository: open-mpc/mpc-vst-plugins
+          ref: 8ace10a277784689c6d0e3281c0e8d6ddc14e220
+          path: openmpc
+      - name: Make and check the catalog release zips
+        run: |
+          VERSION=$(python3 -c 'import json; print(json.load(open("mpc-plugin/plugin.json"))["version"])')
+          case "$GITHUB_REF" in refs/tags/v*) [ "${GITHUB_REF#refs/tags/v}" = "$VERSION" ] || { echo "::error::tag $GITHUB_REF_NAME does not match plugin.json version $VERSION"; exit 1; };; esac
+          mkdir -p release
+          python3 openmpc/tools/sdk_release.py "mpc-plugin/build/BeatsbyLonza - VST - ZaY-o-Nator" --version "$VERSION" \
+            --id zay-o-nator --repo "$GITHUB_REPOSITORY" --license MIT \
+            --about "Backlit VU meters, LED peak meters and a spectrum on your MPC screen, sent over Wi-Fi to the ZaY-o-Nator Display on your Mac for your extra monitor" \
+            --requires "Wi-Fi on the MPC and the ZaY-o-Nator Display on your Mac to show it on another screen (ZaY-o-Nator-Mac in this release); the meters on the MPC work without it" \
+            -o release
+          for z in release/*-mpc-armv7.zip release/*-mpc-aarch64.zip; do python3 openmpc/tools/catalog_check.py "$z" --catalog; done
+          python3 openmpc/tools/sdk_zip.py "release/ZaY-o-Nator-$VERSION-mpc-sdk.zip" release/*-mpc-armv7.zip release/*-mpc-aarch64.zip
+          ls -l release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZaY-o-Nator-Release
+          path: release/*.zip
+
   # Publish a release on GitHub (tag like v1.0.0) and this attaches the downloads to it.
   release:
     if: github.event_name == 'release'
-    needs: [display]
+    needs: [display, plugin]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -66,4 +125,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip
+        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip art/ZaY-o-Nator-Release/*.zip

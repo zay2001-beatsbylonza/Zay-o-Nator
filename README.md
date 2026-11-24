@@ -28,15 +28,20 @@ Keep the small terminal window open while you use the display. The mouse and but
 ### Your MPCs
 
 - **Through an audio interface or Loopback:** pick that input and the channel pair the MPC is on (for example 3–4). Use **Name shown on screen** to label it (MPC LIVE III).
-- **Over Wi-Fi:** MPCs running the ZaY-o-Nator MPC plugin (coming next) send their meters to the display by themselves. Each one shows up as a button and in the RACK face.
+- **Over Wi-Fi:** put the **ZaY-o-Nator MPC plugin** on a track or the master of each MPC. They send their meters to the display by themselves, and each one shows up as a button and in the RACK face.
 
 ### On your stream
 
 In StreamYard, share the display's window or screen, or put it full screen on your extra monitor and point a camera at it.
 
+## The MPC plugin
+
+The same VU meters, LED peaks and spectrum also run on the MPC's own screen (MPC OS 3.10.1 or later). Each release includes `ZaY-o-Nator-<version>-mpc-sdk.zip`: copy the `BeatsbyLonza - VST - ZaY-o-Nator` folder into `VST2 Plugins`. See [mpc-plugin/README.md](mpc-plugin/README.md) for the install steps, the controls (**0 VU**, **Left / Right Meter**, **Send**) and what to do if the display doesn't see the MPC.
+
 ## Settings
 
 - **Left / right meter:** classic cream or noir amber for each VU.
+- **0 VU level:** -18, -14 or -10 dBFS (use -10 for loud beats).
 - **Accent:** gold, blue or red.
 - **Show LIVE badge**, **Show source buttons**, **Show face buttons**.
 - **Change face every 30 seconds.**
@@ -45,6 +50,7 @@ Settings are saved in your browser.
 
 ## For developers
 
+- `mpc-plugin/` is the MPC plugin (Akai's MPC Plugin SDK); `tools/make_skin.py` draws its screen into `mpc-plugin/skins/`.
 - `display/` is a small Go app that serves the page (`display/web/index.html`) on `http://localhost:47910`, on this computer only.
 - MPCs send meters as UDP packets to port **47911**: `ZAYO1|<name>|peakL|peakR|rmsL|rmsR|band1,band2,...` (all in dBFS, bands bass first).
 - GitHub Actions builds the Mac and Windows downloads on every push and attaches them to each release.
