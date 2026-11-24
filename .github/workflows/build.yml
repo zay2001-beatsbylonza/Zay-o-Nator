@@ -1,0 +1,69 @@
+name: build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  display:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Check
+        working-directory: display
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; echo "::error::run gofmt"; exit 1; }
+          go vet ./...
+      - name: Build for Mac (Apple Silicon and Intel) and Windows
+        working-directory: display
+        run: |
+          B="-s -w -X main.build=${GITHUB_SHA::7}"
+          mkdir -p "../dist/mac/ZaY-o-Nator" "../dist/win/ZaY-o-Nator"
+          CGO_ENABLED=0 GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags="$B" -o "../dist/mac/ZaY-o-Nator/zayonator-display-apple-silicon" .
+          CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags="$B" -o "../dist/mac/ZaY-o-Nator/zayonator-display-intel" .
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="$B" -o "../dist/win/ZaY-o-Nator/zayonator-display.exe" .
+          cp "Start ZaY-o-Nator.command" ../README.md ../LICENSE "../dist/mac/ZaY-o-Nator/"
+          cp "Start ZaY-o-Nator.bat" ../README.md ../LICENSE "../dist/win/ZaY-o-Nator/"
+          chmod +x "../dist/mac/ZaY-o-Nator/"*.command "../dist/mac/ZaY-o-Nator/"zayonator-display-*
+          sed -i 's/\r*$/\r/' "../dist/win/ZaY-o-Nator/Start ZaY-o-Nator.bat"
+      - name: Zip (keeps the run permissions)
+        run: |
+          (cd dist/mac && zip -r -X ../ZaY-o-Nator-Mac.zip ZaY-o-Nator)
+          (cd dist/win && zip -r -X ../ZaY-o-Nator-Windows.zip ZaY-o-Nator)
+      - name: Smoke test (page, MPC meters, sources)
+        run: |
+          (cd display && go build -o ../zd .)
+          ./zd --no-open --port 47990 & sleep 1
+          curl -sf http://localhost:47990/ | grep -q "ZaY-o-Nator"
+          python3 -c "import socket;socket.socket(socket.AF_INET,socket.SOCK_DGRAM).sendto(b'ZAYO1|MPC Test|-6|-7|-18|-19|-30,-25',('127.0.0.1',47911))"
+          sleep 1
+          curl -sf http://localhost:47990/api/sources | grep -q "MPC Test"
+          echo "smoke test passed"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZaY-o-Nator-Display
+          path: dist/*.zip
+
+  # Publish a release on GitHub (tag like v1.0.0) and this attaches the downloads to it.
+  release:
+    if: github.event_name == 'release'
+    needs: [display]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Attach the files to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip
