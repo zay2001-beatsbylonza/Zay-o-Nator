@@ -41,7 +41,8 @@ type frame struct {
 	PeakR  float64   `json:"peakR"`
 	RmsL   float64   `json:"rmsL"`
 	RmsR   float64   `json:"rmsR"`
-	Bands  []float64 `json:"bands"` // dB, bass first
+	Bands  []float64 `json:"bands"`          // dB, bass first
+	Hits   []uint64  `json:"hits,omitempty"` // drum hits so far: kick, snare, perc, hats (DAW plugin)
 }
 
 type hub struct {
@@ -77,7 +78,7 @@ func (h *hub) sources() []string {
 	return out
 }
 
-// parse reads one packet: "ZAYO1|<name>|peakL|peakR|rmsL|rmsR|b1,b2,...".
+// parse reads one packet: "ZAYO1|<name>|peakL|peakR|rmsL|rmsR|b1,b2,...[|kick,snare,perc,hats]".
 func parse(pkt string) (frame, bool) {
 	parts := strings.Split(strings.TrimSpace(pkt), "|")
 	if len(parts) < 6 || parts[0] != "ZAYO1" {
@@ -103,6 +104,15 @@ func parse(pkt string) (frame, bool) {
 				break
 			}
 			f.Bands = append(f.Bands, clamp(v, -120, 12))
+		}
+	}
+	if len(parts) > 7 && parts[7] != "" {
+		for _, s := range strings.Split(parts[7], ",") {
+			v, err := strconv.ParseUint(s, 10, 64)
+			if err != nil || len(f.Hits) >= 4 {
+				break
+			}
+			f.Hits = append(f.Hits, v)
 		}
 	}
 	return f, true

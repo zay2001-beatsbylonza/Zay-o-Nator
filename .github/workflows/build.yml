@@ -125,6 +125,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+      - name: Drum hit detection test (DRUMS face), loud and quiet mixes
+        run: |
+          c++ -std=c++17 -O2 -Wall -Idaw-plugin tests/drum_hits_test.cpp -o drum_hits_test
+          ./drum_hits_test
+          GAIN=0.1 ./drum_hits_test
       - name: Build VST3 and AU (universal)
         working-directory: daw-plugin
         run: |

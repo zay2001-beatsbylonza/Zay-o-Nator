@@ -464,7 +464,7 @@ function readMpc(name) {
   if (!f || performance.now() - f.t > 1000) return { peak: [-120, -120], rms: [-120, -120], bands };
   const b = f.bands || [];
   if (b.length > 1) for (let i = 0; i < NPTS; i++) { const x = i / (NPTS - 1) * (b.length - 1), j = Math.floor(x), t = x - j; bands[i] = b[j] * (1 - t) + b[Math.min(j + 1, b.length - 1)] * t; }
-  return { peak: [f.peakL, f.peakR], rms: [f.rmsL, f.rmsR], bands };
+  return { peak: [f.peakL, f.peakR], rms: [f.rmsL, f.rmsR], bands, hits: f.hits };
 }
 function readDemo(dt) {
   demoT += dt;
@@ -593,9 +593,16 @@ const lanes = [
   { name: 'HATS', f: [7000, 16000], colour: '#2fd36b', row: 0 }
 ].map((l) => Object.assign(l, { avg: -90, env: 0, cool: 0 }));
 const pads = Array.from({ length: 16 }, () => ({ v: 0, colour: '#2fd36b' }));
-function drawDrums(dt) {
+function drawDrums(d, dt) {
   g.fillStyle = '#000'; g.fillRect(0, 0, scW, scH);
-  for (const l of lanes) {
+  if (d.hits && d.hits.length === 4) {   // the DAW plugin catches each hit itself: use its counts
+    lanes.forEach((l, i) => {
+      if (l.seen !== undefined && d.hits[i] !== l.seen) {
+        l.env = 1; const p = pads[l.row * 4 + (l.next = ((l.next || 0) + 1) % 4)]; p.v = 1; p.colour = l.colour;
+      }
+      l.seen = d.hits[i]; l.env = Math.max(0, l.env - dt * 3.5);
+    });
+  } else for (const l of lanes) {
     const e = bandEnergy(l.f[0], l.f[1]);
     l.cool -= dt;
     if (e - l.avg > 5 && e > -75 && l.cool <= 0) {   // a hit: louder than this lane's recent average
@@ -709,7 +716,7 @@ function drawShow(d, dt) {
   fitCanvas();
   if (S.showMode === 'master') drawMaster(d, dt);
   else if (S.showMode === 'synths') drawSynths(d, dt);
-  else drawDrums(dt);
+  else drawDrums(d, dt);
 }
 setMode(S.showMode); showTitle();
 $('txtShow').value = S.showTitle;

@@ -79,19 +79,18 @@ protected:
             const float h = std::fmin(1.0f, std::fmax(0.0f, (snap_->bandDb[b].load() + 90.0f) / 80.0f));
             bars_[b] = h > bars_[b] ? h : std::fmax(h, bars_[b] - 1.8f * (float)dt);
         }
-        // DRUMS: a hit is a lane louder than its own recent average
-        for (Lane& l : lanes_)
+        // DRUMS: the plugin catches each hit on the audio thread; a new count lights that lane
+        for (int i = 0; i < 4; ++i)
         {
-            float e = -140.0f;
-            for (int b = l.b0; b <= l.b1; ++b) e = std::fmax(e, snap_->bandDb[b].load());
-            l.cool -= (float)dt;
-            if (e - l.avg > 5.0f && e > -75.0f && l.cool <= 0.0f)
+            Lane& l = lanes_[i];
+            const uint32_t n = snap_->hits[i].load();
+            if (n != l.seen)
             {
-                l.env = 1.0f; l.cool = 0.09f;
-                Pad& pad = pads_[l.row * 4 + std::rand() % 4];
+                l.seen = n;
+                l.env = 1.0f;
+                Pad& pad = pads_[l.row * 4 + (l.next++ % 4)];   // walk along the row like a finger drummer
                 pad.v = 1.0f; pad.colour = l.colour;
             }
-            l.avg += (e - l.avg) * std::fmin(1.0f, (float)dt * 4.0f);
             l.env = std::fmax(0.0f, l.env - 3.5f * (float)dt);
         }
         for (Pad& pad : pads_) pad.v = std::fmax(0.0f, pad.v - 2.6f * (float)dt);
@@ -511,13 +510,13 @@ private:
         }
     }
 
-    struct Lane { const char* name; int b0, b1, row; Color colour; float avg, env, cool; };
+    struct Lane { const char* name; int row; Color colour; float env; uint32_t seen; int next; };
     struct Pad { float v; Color colour; };
     Lane lanes_[4] = {
-        { "KICK", 1, 6, 3, Color(0xff, 0x3b, 0x30), -90, 0, 0 },
-        { "SNARE", 8, 13, 2, Color(0xff, 0xd2, 0x3f), -90, 0, 0 },
-        { "PERC", 15, 23, 1, Color(0xff, 0x8a, 0x3d), -90, 0, 0 },
-        { "HATS", 27, 31, 0, Color(0x2f, 0xd3, 0x6b), -90, 0, 0 },
+        { "KICK", 3, Color(0xff, 0x3b, 0x30), 0, 0, 0 },
+        { "SNARE", 2, Color(0xff, 0xd2, 0x3f), 0, 0, 0 },
+        { "PERC", 1, Color(0xff, 0x8a, 0x3d), 0, 0, 0 },
+        { "HATS", 0, Color(0x2f, 0xd3, 0x6b), 0, 0, 0 },
     };
     Pad pads_[16] = {};
     float corr_ = 1.0f, mPeak_ = -120.0f, mRms_ = -120.0f, ringRot_ = 0.0f;

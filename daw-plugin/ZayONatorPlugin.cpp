@@ -5,7 +5,7 @@
 // activates the plugin, wakes ~25 times a second and works out the levels (peak, RMS)
 // and 32 spectrum bands for the screen, and - when Send is on - sends one small UDP
 // packet to the ZaY-o-Nator Display on this computer (and the network):
-//     ZAYO1|DAW <NAME>|peakL|peakR|rmsL|rmsR|b1,...,b32
+//     ZAYO1|DAW <NAME>|peakL|peakR|rmsL|rmsR|b1,...,b32|kick,snare,perc,hats (hit counts)
 // The display shows it like an MPC: a button with the name, and a pair in RACK.
 //
 // Parameter order is FROZEN once released (saved sessions store it).
@@ -115,7 +115,11 @@ protected:
     float getParameterValue(uint32_t index) const override { return index < kParamCount ? values_[index] : 0.0f; }
     void setParameterValue(uint32_t index, float value) override { if (index < kParamCount) values_[index] = value; }
 
-    void activate() override { startWorker(); }
+    void activate() override
+    {
+        drums_.prepare((float)getSampleRate());
+        startWorker();
+    }
     void deactivate() override { stopWorker(); }
 
     void run(const float** inputs, float** outputs, uint32_t frames) override
@@ -126,6 +130,7 @@ protected:
             const float l = inputs[0][i], r = inputs[1][i];
             outputs[0][i] = l;
             outputs[1][i] = r;
+            drums_.run(0.5f * (l + r));
             ringL_[w & (kRing - 1)] = l;
             ringR_[w & (kRing - 1)] = r;
             ++w;
@@ -193,6 +198,7 @@ private:
                 snap_.wave[0][i].store(ringL_[k]);
                 snap_.wave[1][i].store(ringR_[k]);
             }
+            for (int l = 0; l < kLanes; ++l) snap_.hits[l].store(drums_.count[l].load(std::memory_order_relaxed));
             spectrum(w, bands);
             for (int b = 0; b < kBands; ++b) snap_.bandDb[b].store(bands[b]);
 
@@ -213,6 +219,8 @@ private:
         for (int b = 0; b < kBands && len < (int)sizeof buf - 16; ++b)
             len += std::snprintf(buf + len, sizeof buf - len, b ? ",%.1f" : "%.1f", std::max(-120.0f, bands[b]));
         sockaddr_in to{};
+        len += std::snprintf(buf + len, sizeof buf - len, "|%u,%u,%u,%u", snap_.hits[0].load(), snap_.hits[1].load(),
+                             snap_.hits[2].load(), snap_.hits[3].load());
         to.sin_family = AF_INET;
         to.sin_port = htons(kPort);
         to.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -276,6 +284,7 @@ private:
     static float toDb(float x) { return 20.0f * std::log10(std::max(x, 1e-6f)); }
 
     float values_[kParamCount];
+    DrumHits drums_;
     Snapshot snap_;
 
     float ringL_[kRing] = {}, ringR_[kRing] = {};

@@ -5,6 +5,8 @@
 #include <atomic>
 #include <cstdint>
 
+#include "DrumHits.hpp"
+
 namespace zay {
 
 enum Param : uint32_t {
@@ -35,6 +37,7 @@ struct Snapshot {
     std::atomic<float> rmsDb[2] { {-120.0f}, {-120.0f} };
     std::atomic<float> bandDb[kBands];
     std::atomic<float> wave[2][kWave];   // the newest samples, for the scope and the vectorscope
+    std::atomic<uint32_t> hits[kLanes] {};   // drum hits so far, per lane (DRUMS face)
     std::atomic<int> sendState { 0 };   // 0 = off, 1 = sending, 2 = can't send
     std::atomic<uint32_t> counter { 0 };
     Snapshot()
