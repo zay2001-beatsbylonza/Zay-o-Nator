@@ -18,6 +18,7 @@ Put ZaY-o-Nator on a track or the master. Click the buttons along the bottom to 
 
 | Button | What it does |
 | --- | --- |
+| **FACE** | Seven looks: **DUO** (two VUs over the spectrum), **SPECTRUM**, **NEEDLES** (big VUs, black meter first), **CONSOLE** (LED towers and bars), **DRUMS** (pads that flash on kicks, snares, percussion and hats), **MASTER** (vectorscope, peak, RMS, stereo correlation) and **SYNTHS** (a scope inside a ring of spectrum). |
 | **NAME** | What the display calls this track: MASTER, DRUMS, SYNTHS, BASS, KEYS, VOCALS, FX or TRACK. Put one on your drums bus set to DRUMS, one on your synths set to SYNTHS, and one on the master. |
 | **0 VU** | Which level reads 0 on the needles: -18, -14 or -10 dB. Use -10 for loud, finished beats. |
 | **LEFT METER / RIGHT METER** | Classic (cream) or Noir (black) for each meter. |

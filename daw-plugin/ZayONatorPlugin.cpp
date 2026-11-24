@@ -46,6 +46,7 @@ public:
         values_[kRef] = 2.0f;
         values_[kLookL] = 0.0f;
         values_[kLookR] = 1.0f;
+        values_[kFace] = 0.0f;
     }
 
     ~ZayONatorPlugin() override { stopWorker(); }
@@ -103,6 +104,10 @@ protected:
             p.symbol = index == kLookL ? "lookl" : "lookr";
             p.ranges.max = 1.0f; p.ranges.def = index == kLookL ? 0.0f : 1.0f;
             enumerate(p, kLookLabels, 2);
+            break;
+        case kFace:
+            p.name = "Face"; p.symbol = "face"; p.ranges.max = kFaces - 1; p.ranges.def = 0.0f;
+            enumerate(p, kFaceLabels, kFaces);
             break;
         }
     }
@@ -181,6 +186,12 @@ private:
                 rmsDb[c] = n ? toDb(std::sqrt(sum[c] / (float)n)) : -120.0f;
                 snap_.peakDb[c].store(peakDb[c]);
                 snap_.rmsDb[c].store(rmsDb[c]);
+            }
+            for (int i = 0; i < kWave; ++i)
+            {
+                const uint32_t k = (w - kWave + (uint32_t)i) & (kRing - 1);
+                snap_.wave[0][i].store(ringL_[k]);
+                snap_.wave[1][i].store(ringR_[k]);
             }
             spectrum(w, bands);
             for (int b = 0; b < kBands; ++b) snap_.bandDb[b].store(bands[b]);

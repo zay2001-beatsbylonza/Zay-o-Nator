@@ -13,6 +13,7 @@ enum Param : uint32_t {
     kRef,        // the level that reads 0 VU: -18, -14 or -10 dBFS
     kLookL,      // left meter face: Classic (cream) or Noir (black)
     kLookR,      // right meter face
+    kFace,       // which screen: DUO, SPECTRUM, NEEDLES, CONSOLE, DRUMS, MASTER, SYNTHS
     kParamCount
 };
 
@@ -21,6 +22,9 @@ static const char* const kNameLabels[kNames] = { "MASTER", "DRUMS", "SYNTHS", "B
 static const char* const kRefLabels[3] = { "-18 dB", "-14 dB", "-10 dB" };
 static const float kRefDb[3] = { 18.0f, 14.0f, 10.0f };
 static const char* const kLookLabels[2] = { "Classic", "Noir" };
+constexpr int kFaces = 7;
+static const char* const kFaceLabels[kFaces] = { "DUO", "SPECTRUM", "NEEDLES", "CONSOLE", "DRUMS", "MASTER", "SYNTHS" };
+constexpr int kWave = 512;
 
 constexpr int kBands = 32;
 
@@ -30,9 +34,14 @@ struct Snapshot {
     std::atomic<float> peakDb[2] { {-120.0f}, {-120.0f} };
     std::atomic<float> rmsDb[2] { {-120.0f}, {-120.0f} };
     std::atomic<float> bandDb[kBands];
+    std::atomic<float> wave[2][kWave];   // the newest samples, for the scope and the vectorscope
     std::atomic<int> sendState { 0 };   // 0 = off, 1 = sending, 2 = can't send
     std::atomic<uint32_t> counter { 0 };
-    Snapshot() { for (auto& b : bandDb) b.store(-120.0f); }
+    Snapshot()
+    {
+        for (auto& b : bandDb) b.store(-120.0f);
+        for (auto& ch : wave) for (auto& v : ch) v.store(0.0f);
+    }
 };
 
 // VU scale (VU value, needle angle in degrees), the same as the MPC plugin and the display
