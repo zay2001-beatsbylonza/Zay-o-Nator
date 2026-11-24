@@ -42,7 +42,7 @@ public:
     ZayONatorPlugin() : Plugin(kParamCount, 0, 0)
     {
         values_[kName] = 0.0f;
-        values_[kSend] = 1.0f;
+        values_[kSend] = 0.0f;   // off until the user turns it on
         values_[kRef] = 2.0f;
         values_[kLookL] = 0.0f;
         values_[kLookR] = 1.0f;
@@ -63,7 +63,7 @@ protected:
     const char* getMaker() const override { return "BeatsbyLonza"; }
     const char* getHomePage() const override { return "https://github.com/zay2001-beatsbylonza/Zay-o-Nator"; }
     const char* getLicense() const override { return "MIT"; }
-    uint32_t getVersion() const override { return d_version(1, 1, 1); }
+    uint32_t getVersion() const override { return d_version(1, 1, 2); }
 
     void initAudioPort(bool input, uint32_t index, AudioPort& port) override
     {
@@ -92,7 +92,7 @@ protected:
             break;
         case kSend:
             p.hints |= kParameterIsBoolean;
-            p.name = "Send"; p.symbol = "send"; p.ranges.max = 1.0f; p.ranges.def = 1.0f;
+            p.name = "Send"; p.symbol = "send"; p.ranges.max = 1.0f; p.ranges.def = 0.0f;
             break;
         case kRef:
             p.name = "0 VU"; p.symbol = "ref"; p.ranges.max = 2.0f; p.ranges.def = 2.0f;

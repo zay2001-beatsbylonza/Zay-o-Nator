@@ -55,6 +55,8 @@ int main(int argc, char** argv)
     e->dispatcher(e, effSetSampleRate, 0, 0, nullptr, 44100.0f);
     e->dispatcher(e, effSetBlockSize, 0, 128, nullptr, 0.0f);
     e->dispatcher(e, effMainsChanged, 0, 1, nullptr, 0.0f);
+    check(e->getParameter(e, kSend) < 0.5f, "Send is off until you turn it on", std::to_string(e->getParameter(e, kSend)));
+    e->setParameter(e, kSend, 1.0f);   // turn it on, like a ZaY-o-Nator Display owner would
 
     // a 100 Hz tone with a little 3 kHz (about -16 dBFS RMS), in real time
     std::thread audio([e] {

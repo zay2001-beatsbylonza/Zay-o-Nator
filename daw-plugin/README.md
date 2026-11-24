@@ -22,7 +22,7 @@ Put ZaY-o-Nator on a track or the master. Click the buttons along the bottom to 
 | **NAME** | What the ZaY-o-Nator Display calls this track (if you have it): MASTER, DRUMS, SYNTHS, BASS, KEYS, VOCALS, FX or TRACK. Put one on your drums bus set to DRUMS, one on your synths set to SYNTHS, and one on the master. |
 | **0 VU** | Which level reads 0 on the needles: -18, -14 or -10 dB. Use -10 for loud, finished beats. |
 | **LEFT METER / RIGHT METER** | Classic (cream) or Noir (black) for each meter. |
-| **SEND** | Sends this track's meters to the ZaY-o-Nator Display, a separate app sold by BeatsbyLonza. Not needed for anything in the plugin. |
+| **SEND** | Sends this track's meters to the ZaY-o-Nator Display, a separate app sold by BeatsbyLonza. Off until you turn it on; not needed for anything in the plugin. |
 
 With the ZaY-o-Nator Display, each one shows up as its own button (for example **DAW DRUMS**).
 
@@ -30,6 +30,6 @@ The window can be resized: drag its corner.
 
 ## Notes
 
-- With SEND on, it sends small meter packets (levels, 32 spectrum bands and drum hits, never audio) on UDP port 47911, to this Mac and your local network. Turn SEND off if you don't use the ZaY-o-Nator Display.
+- With SEND on, it sends small meter packets (levels, 32 spectrum bands and drum hits, never audio) on UDP port 47911, to this Mac and your local network. SEND is off until you turn it on.
 - Built with DPF (DISTRHO Plugin Framework, ISC licence). The title font is DejaVu Serif Italic (see `fonts/DejaVu-LICENSE.txt`).
 - Not notarized by Apple yet. The installer lifts the download quarantine for these two plugins only.

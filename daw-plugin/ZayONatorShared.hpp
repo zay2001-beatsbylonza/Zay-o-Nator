@@ -11,7 +11,7 @@ namespace zay {
 
 enum Param : uint32_t {
     kName = 0,   // what this track is called on the display: MASTER, DRUMS, SYNTHS, ...
-    kSend,       // send the meters to the ZaY-o-Nator Display (on by default)
+    kSend,       // send the meters to the ZaY-o-Nator Display (off by default)
     kRef,        // the level that reads 0 VU: -18, -14 or -10 dBFS
     kLookL,      // left meter face: Classic (cream) or Noir (black)
     kLookR,      // right meter face

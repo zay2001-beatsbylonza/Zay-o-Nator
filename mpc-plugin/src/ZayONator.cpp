@@ -47,7 +47,7 @@ namespace {
 enum ParamIndex
 {
     kOutput = 0,   // dB. Param 0 is nudged by the host on load: a plain gain is harmless.
-    kSend,         // send the meters to the ZaY-o-Nator Display over Wi-Fi
+    kSend,         // send the meters to the ZaY-o-Nator Display over Wi-Fi (off by default)
     kLookL,        // left meter face: Classic (cream) or Noir (black)
     kLookR,        // right meter face
     kRef,          // the level that reads 0 VU: -18, -14 or -10 dBFS (loud beats swing best at -10)
@@ -119,7 +119,7 @@ public:
     ZayONator() : mpc::Plugin(makeInfo())
     {
         addParam(mpc::floatParam("output", "Output", -24.0f, 12.0f, 0.0f, "dB", 1));
-        addParam(mpc::boolParam("send", "Send", true));
+        addParam(mpc::boolParam("send", "Send", false));   // off until the user turns it on
         addParam(mpc::choiceParam("lookl", "Left Meter", { "Classic", "Noir" }, 0));
         addParam(mpc::choiceParam("lookr", "Right Meter", { "Classic", "Noir" }, 1));
         addParam(mpc::choiceParam("ref", "0 VU", { "-18 dB", "-14 dB", "-10 dB" }, 2));

@@ -22,7 +22,7 @@ On any track or the master, add an insert: **External VST Plugins → BeatsbyLon
 | --- | --- |
 | **0 VU** | Sets which level reads 0 on the VU needles: -18, -14 or -10 dBFS. Use -10 for loud, finished beats so the needles swing around 0 instead of sticking at the top. |
 | **Left Meter / Right Meter** | Sets each meter's face: **Classic** (cream) or **Noir** (black and amber). |
-| **Send** | Sends the meters over Wi-Fi to the ZaY-o-Nator Display, a separate app sold by BeatsbyLonza. Not needed for the meters on the MPC. |
+| **Send** | Sends the meters over Wi-Fi to the ZaY-o-Nator Display, a separate app sold by BeatsbyLonza. Off until you turn it on; not needed for the meters on the MPC. |
 
 The line at the top left says what it's doing, for example `Sending to display as MPC-Live-III`.
 

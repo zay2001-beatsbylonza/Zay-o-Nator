@@ -51,7 +51,7 @@ public:
         sans_ = findFont(NANOVG_DEJAVU_SANS_TTF);
         serif_ = createFontFromMemory("zay-serif", kFontSerifItalic, kFontSerifItalicSize, false);
         if (serif_ < 0) serif_ = sans_;
-        values_[kName] = 0; values_[kSend] = 1; values_[kRef] = 2; values_[kLookL] = 0; values_[kLookR] = 1; values_[kFace] = 0;
+        values_[kName] = 0; values_[kSend] = 0; values_[kRef] = 2; values_[kLookL] = 0; values_[kLookR] = 1; values_[kFace] = 0;
         for (float& b : bars_) b = 0.0f;
         snap_ = zayGetSnapshot(getPluginInstancePointer());
     }
