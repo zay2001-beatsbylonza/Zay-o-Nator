@@ -616,7 +616,7 @@
          "imageType": "FilmStrip",
          "colour": "0",
          "image": "vu_needle.png",
-         "numFrames": 98,
+         "numFrames": 82,
          "handleName": "Data"
         }
        },
@@ -774,7 +774,7 @@
          "imageType": "FilmStrip",
          "colour": "0",
          "image": "vu_needle.png",
-         "numFrames": 98,
+         "numFrames": 82,
          "handleName": "Data"
         }
        },

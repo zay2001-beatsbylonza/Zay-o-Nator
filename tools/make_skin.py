@@ -6,7 +6,7 @@ then draws the meters above them:
   - the page background: title, "by BeatsbyLonza", the meter cells and the spectrum panel,
   - two VU meters, each in three layers: the face (a 2-frame film strip: Classic cream /
     Noir black, following "Left Meter" / "Right Meter"), the needle (a film strip
-    following "VU L" / "VU R": frames 0-48 black needle, 49-97 orange needle for Noir)
+    following "VU L" / "VU R": frames 0-40 black needle, 41-81 orange needle for Noir)
     and the glass and pivot cap on top,
   - two LED peak meters (green, yellow, red; a film strip following "Peak L" / "Peak R"),
   - 32 spectrum bars colored by height (film strips following "Band 01".."Band 32"),
@@ -47,7 +47,7 @@ PIV = (150 * S, 182 * S)
 NLEN = 124 * S
 NX0, NY0 = int(PIV[0] - NLEN * math.sin(math.radians(52)) - 6), int(PIV[1] - NLEN - 6)
 NW, NH = int(2 * (PIV[0] - NX0)), int(PIV[1] - NY0 + 4)
-VU_FRAMES = 49
+VU_FRAMES = 41
 LEDS = 24
 BANDS, BAND_STEPS = 32, 16
 SPEC = (X0, 368, PW - 2 * X0, 116)            # spectrum panel x, y, w, h

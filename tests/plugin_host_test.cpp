@@ -76,8 +76,8 @@ int main(int argc, char** argv)
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
     // -17 dBFS RMS with 0 VU = -10 dBFS reads about -7 VU: off the rest, not pinned
     const int vuL = std::atoi(display(e, kVuL).c_str()), vuR = std::atoi(display(e, kVuR).c_str());
-    check(vuL >= 8 && vuL <= 30, "left needle swings (classic face, frames 0-48)", display(e, kVuL));
-    check(vuR >= 49 + 8 && vuR <= 49 + 30, "right needle swings (noir face, frames 49-97)", display(e, kVuR));
+    check(vuL >= 6 && vuL <= 25, "left needle swings (classic face, frames 0-40)", display(e, kVuL));
+    check(vuR >= 41 + 6 && vuR <= 41 + 25, "right needle swings (noir face, frames 41-81)", display(e, kVuR));
     check(e->getParameter(e, kPeakL) > 0.2f, "left LEDs are lit", display(e, kPeakL));
     int lowBar = 0, topBar = 0;
     for (int b = 0; b < 32; ++b)

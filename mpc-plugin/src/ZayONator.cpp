@@ -62,7 +62,7 @@ enum ParamIndex
 
 constexpr int kBands     = 32;
 constexpr int kBandSteps = 16;
-constexpr int kVuFrames  = 49;     // needle positions per face
+constexpr int kVuFrames  = 41;     // needle positions per face (2 x 41 frames keeps the skin strip under 16384 px)
 constexpr int kLeds      = 24;
 constexpr int kFft       = 1024;
 constexpr int kRing      = 8192;   // per channel, a power of two
