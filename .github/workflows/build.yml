@@ -37,6 +37,11 @@ jobs:
         run: |
           (cd dist/mac && zip -r -X ../ZaY-o-Nator-Mac.zip ZaY-o-Nator)
           (cd dist/win && zip -r -X ../ZaY-o-Nator-Windows.zip ZaY-o-Nator)
+      - name: Drum hit detection in the display (same beat as the DAW plugin's test)
+        run: |
+          c++ -std=c++17 -O2 -Idaw-plugin tests/drum_hits_test.cpp -o drum_hits_test
+          DUMP=beat.f32 ./drum_hits_test
+          node tests/drum_hits_js_test.js beat.f32
       - name: Smoke test (page, MPC meters, sources)
         run: |
           (cd display && go build -o ../zd .)

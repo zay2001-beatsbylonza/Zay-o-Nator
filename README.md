@@ -15,7 +15,7 @@ Click the face buttons at the bottom, press **1–6**, or use the **arrow keys**
 | 3 | **NEEDLES** | Just the VUs and LED peaks, as big as they go, with the black meter first |
 | 4 | **RACK** | A pair of meters for every MPC sending to the display, all at once |
 | 5 | **CONSOLE** | Tall LED towers and green, yellow and red spectrum bars |
-| 6 | **SHOWCASE** | For showing off a plugin in your DAW: a big title (set it in Settings) and three styles. **DRUMS** (key D): MPC-style pads that flash on kicks, snares, percussion and hats, and a pumping kick ring. **MASTER** (key M): a stereo vectorscope, big peak and RMS numbers, stereo correlation and L/R bars. **SYNTHS** (key Y): a glowing waveform scope inside a ring of spectrum. |
+| 6 | **SHOWCASE** | For showing off a plugin in your DAW: a big title (set it in Settings) and three styles. **DRUMS** (key D): MPC-style pads that flash on kicks, snares, percussion and hats (caught the moment they hit, from an audio input or a DAW plugin), and a pumping kick ring. **MASTER** (key M): a stereo vectorscope, big peak and RMS numbers, stereo correlation and L/R bars. **SYNTHS** (key Y): a glowing waveform scope inside a ring of spectrum. |
 
 ## Get it
 

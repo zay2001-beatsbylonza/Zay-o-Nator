@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <random>
+#include <string>
 #include <vector>
 
 using namespace zay;
@@ -92,6 +93,12 @@ int main()
         x[i] += 0.04f * (std::sin(2 * 3.14159f * 220 * t) + std::sin(2 * 3.14159f * 277 * t) + std::sin(2 * 3.14159f * 330 * t));
     }
 
+    if (const char* dump = std::getenv("DUMP"))   // the beat (float32, 48 kHz) and its true hits, for the display's test
+    {
+        if (FILE* fo = std::fopen(dump, "wb")) { std::fwrite(x.data(), sizeof(float), x.size(), fo); std::fclose(fo); }
+        const std::string tp = std::string(dump) + ".hits";
+        if (FILE* ft = std::fopen(tp.c_str(), "w")) { for (const Hit& h : truth) std::fprintf(ft, "%d %zu\n", h.lane, h.at); std::fclose(ft); }
+    }
     const float gain = std::getenv("GAIN") ? (float)std::atof(std::getenv("GAIN")) : 1.0f;
     for (float& v : x) v *= gain;
     DrumHits d;

@@ -306,6 +306,7 @@ function buildRack() {
 
 // ---------- sources ----------
 let ctx = null, stream = null, anaL = null, anaR = null, anaS = null, bufL, bufR, bufS, monitorGain = null;
+let drumNode = null, drumModule = false, inputHits = null;   // DRUMS: hits caught on the audio thread
 let mpcFrames = {}, mpcList = [], chanCount = 2;
 const msg = (t) => { $('msg').textContent = t || ''; };
 
@@ -333,16 +334,25 @@ async function startInput() {
   // optional: play the input through the speakers (the meters only listen otherwise)
   const merge = ctx.createChannelMerger(2);
   split.connect(merge, a, 0); split.connect(merge, b, 1);
+  bufL = new Float32Array(anaL.fftSize); bufR = new Float32Array(anaR.fftSize); bufS = new Float32Array(anaS.frequencyBinCount);
+  // DRUMS: the same hit detector as the DAW plugin, on the browser's audio thread
+  try {
+    if (!drumModule) { await ctx.audioWorklet.addModule('drums-worklet.js'); drumModule = true; }
+    drumNode = new AudioWorkletNode(ctx, 'zay-drum-hits', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 2, channelCountMode: 'explicit' });
+    drumNode.port.onmessage = (e) => { inputHits = e.data; };
+    merge.connect(drumNode);
+  } catch (e) { drumNode = null; inputHits = null; }   // older browsers: DRUMS falls back to the spectrum
   monitorGain = ctx.createGain(); monitorGain.gain.value = 1;
   merge.connect(monitorGain);
   if (S.monitor) monitorGain.connect(ctx.destination);   // only touches the Mac's output when you ask to hear it
-  bufL = new Float32Array(anaL.fftSize); bufR = new Float32Array(anaR.fftSize); bufS = new Float32Array(anaS.frequencyBinCount);
   msg('');
   await listDevices();
 }
 function stopInput() {
   if (stream) stream.getTracks().forEach((t) => t.stop());
   if (monitorGain) { monitorGain.disconnect(); monitorGain = null; }
+  if (drumNode) { drumNode.port.onmessage = null; drumNode.disconnect(); drumNode = null; }
+  inputHits = null;
   stream = null; anaL = anaR = anaS = null;
 }
 async function listDevices() {
@@ -456,7 +466,7 @@ function readInput() {
     let m = -140; for (let k = k0; k < k1 && k < bufS.length; k++) m = Math.max(m, bufS[k]);
     bands[i] = m + 3 * Math.log2(Math.max(f0, 50) / 1000);   // a gentle tilt so highs show, like a mastering analyser
   }
-  return { peak: [pl, pr], rms: [rl, rr], bands };
+  return { peak: [pl, pr], rms: [rl, rr], bands, hits: inputHits || undefined };
 }
 function readMpc(name) {
   const f = mpcFrames[name];
