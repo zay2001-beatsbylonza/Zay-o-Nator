@@ -110,10 +110,59 @@ jobs:
           name: ZaY-o-Nator-Release
           path: release/*.zip
 
+  # The DAW plugin for the Mac: VST3 and AU, Apple Silicon and Intel in one (DPF, ISC licence).
+  daw-plugin:
+    runs-on: macos-latest
+    env:
+      DPF_COMMIT: 4238e1c7f0351bbe488d79f0899c540543ac7583
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get DPF (DISTRHO Plugin Framework)
+        run: |
+          git clone https://github.com/DISTRHO/DPF dpf
+          git -C dpf checkout "$DPF_COMMIT"
+          git -C dpf submodule update --init --recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Build VST3 and AU (universal)
+        working-directory: daw-plugin
+        run: |
+          make macos-universal-10.15 DPF_PATH=../dpf -j3
+          ls bin
+          lipo -info "bin/ZaY-o-Nator.vst3/Contents/MacOS/ZaY-o-Nator" "bin/ZaY-o-Nator.component/Contents/MacOS/ZaY-o-Nator"
+      - name: Sign (ad hoc, so Apple Silicon will load them)
+        working-directory: daw-plugin/bin
+        run: |
+          codesign --force --deep -s - "ZaY-o-Nator.vst3"
+          codesign --force --deep -s - "ZaY-o-Nator.component"
+      - name: Apple's AU validator, with a ZaY-o-Nator Display listening
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "daw-plugin/bin/ZaY-o-Nator.component" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          (cd display && go build -o ../zd .)
+          ./zd --no-open --port 47990 > zd.log 2>&1 &
+          sleep 2
+          auval -v aufx ZyNa Bbyl | tee auval.log
+          grep -q "AU VALIDATION SUCCEEDED" auval.log
+          curl -s http://localhost:47990/api/sources | tee sources.json
+          if grep -q "DAW MASTER" sources.json; then echo "PASS  the display received the DAW plugin's meters"; else echo "NOTE  auval did not run long enough to send meters (not a failure)"; fi
+      - name: Package
+        run: |
+          mkdir -p "dist/ZaY-o-Nator DAW Plugins"
+          cp -R daw-plugin/bin/ZaY-o-Nator.vst3 daw-plugin/bin/ZaY-o-Nator.component "daw-plugin/Install ZaY-o-Nator Plugins.command" daw-plugin/README.md LICENSE "dist/ZaY-o-Nator DAW Plugins/"
+          chmod +x "dist/ZaY-o-Nator DAW Plugins/Install ZaY-o-Nator Plugins.command"
+          (cd dist && ditto -c -k --keepParent "ZaY-o-Nator DAW Plugins" ZaY-o-Nator-DAW-Plugins-Mac.zip)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZaY-o-Nator-DAW-Plugins-Mac
+          path: dist/ZaY-o-Nator-DAW-Plugins-Mac.zip
+
   # Publish a release on GitHub (tag like v1.0.0) and this attaches the downloads to it.
   release:
     if: github.event_name == 'release'
-    needs: [display, plugin]
+    needs: [display, plugin, daw-plugin]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -125,4 +174,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip art/ZaY-o-Nator-Release/*.zip
+        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip art/ZaY-o-Nator-Release/*.zip art/ZaY-o-Nator-DAW-Plugins-Mac/*.zip

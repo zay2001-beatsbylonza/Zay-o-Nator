@@ -39,6 +39,10 @@ In StreamYard, share the display's window or screen, or put it full screen on yo
 
 The same VU meters, LED peaks and spectrum also run on the MPC's own screen (MPC OS 3.10.1 or later). Each release includes `ZaY-o-Nator-<version>-mpc-sdk.zip`: copy the `BeatsbyLonza - VST - ZaY-o-Nator` folder into `VST2 Plugins`. See [mpc-plugin/README.md](mpc-plugin/README.md) for the install steps, the controls (**0 VU**, **Left / Right Meter**, **Send**) and what to do if the display doesn't see the MPC.
 
+## In your DAW (VST3 and AU, Mac)
+
+**ZaY-o-Nator-DAW-Plugins-Mac.zip** has the same meters as a VST3 and AU plugin for Logic, Ableton, Studio One, the MPC software and more. Put one on each track you want to show (drums, synths, master). Each one sends its meters to the display, with no Loopback needed. See [daw-plugin/README.md](daw-plugin/README.md).
+
 ## Settings
 
 - **Left / right meter:** classic cream or noir amber for each VU.
@@ -51,6 +55,7 @@ Settings are saved in your browser.
 
 ## For developers
 
+- `daw-plugin/` is the VST3/AU plugin for Mac DAWs (DPF).
 - `mpc-plugin/` is the MPC plugin (Akai's MPC Plugin SDK); `tools/make_skin.py` draws its screen into `mpc-plugin/skins/`.
 - `display/` is a small Go app that serves the page (`display/web/index.html`) on `http://localhost:47910`, on this computer only.
 - MPCs send meters as UDP packets to port **47911**: `ZAYO1|<name>|peakL|peakR|rmsL|rmsR|band1,band2,...` (all in dBFS, bands bass first).
