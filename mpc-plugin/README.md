@@ -1,6 +1,6 @@
 # ZaY-o-Nator (MPC plugin)
 
-Backlit VU meters, LED peak meters and a spectrum on your MPC's screen. It also sends them over Wi-Fi to the **ZaY-o-Nator Display** on your Mac, so every MPC shows up on your extra monitor. By BeatsbyLonza.
+Backlit VU meters, LED peak meters and a spectrum on your MPC's screen. By BeatsbyLonza.
 
 The sound passes straight through, so you can put it on any track or on the master.
 
@@ -22,20 +22,18 @@ On any track or the master, add an insert: **External VST Plugins → BeatsbyLon
 | --- | --- |
 | **0 VU** | Sets which level reads 0 on the VU needles: -18, -14 or -10 dBFS. Use -10 for loud, finished beats so the needles swing around 0 instead of sticking at the top. |
 | **Left Meter / Right Meter** | Sets each meter's face: **Classic** (cream) or **Noir** (black and amber). |
-| **Send** | Sends the meters to the ZaY-o-Nator Display on your Mac. It's on by default. |
+| **Send** | Sends the meters over Wi-Fi to the ZaY-o-Nator Display, a separate app sold by BeatsbyLonza. Not needed for the meters on the MPC. |
 
 The line at the top left says what it's doing, for example `Sending to display as MPC-Live-III`.
 
-## On your extra monitor
+## With the ZaY-o-Nator Display (sold separately)
 
-1. Turn on **Wi-Fi** on the MPC (**Menu → Preferences → Wi-Fi**) and join the same network as your Mac.
-2. Start the **ZaY-o-Nator Display** on the Mac (`Start ZaY-o-Nator.command`).
-3. The MPC shows up as a button at the bottom of the display, and in the **RACK** face with every other MPC. Click its button to show it full size.
+The ZaY-o-Nator Display is a separate app by BeatsbyLonza for your extra monitor and live stream. With **Send** on and the MPC's **Wi-Fi** on (**Menu → Preferences → Wi-Fi**, same network as the computer), the MPC shows up on it by itself.
 
-**If the display doesn't see the MPC:** some routers block broadcasts. Make a text file named `ZaY-o-Nator display.txt` at the top of the drive the plugin is on (MPC User, or the SD card or USB stick). Put just your Mac's address in it, for example `192.168.1.50`. The display's terminal window shows that address. The plugin checks for the file every few seconds.
+**If the display doesn't see the MPC:** some routers block broadcasts. Make a text file named `ZaY-o-Nator display.txt` at the top of the drive the plugin is on (MPC User, or the SD card or USB stick), with just the computer's address in it, for example `192.168.1.50`. The plugin checks for the file every few seconds.
 
 ## Notes
 
 - Light on CPU: the audio thread only copies samples. The meters are worked out about 25 times a second on a background thread.
-- It sends small meter packets (levels and 32 spectrum bands) on UDP port 47911, on your own network only. No audio leaves the MPC.
+- With Send on, it sends small meter packets (levels and 32 spectrum bands) on UDP port 47911, on your own network only. No audio leaves the MPC.
 - Built on Akai's MPC Plugin SDK (MIT). Source: github.com/zay2001-beatsbylonza/Zay-o-Nator

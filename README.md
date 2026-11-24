@@ -1,64 +1,38 @@
 # ZaY-o-Nator
 
-**Premium VU meters and spectrum for your extra monitor. By BeatsbyLonza.** Free and open source (MIT).
+**Premium VU meters, LED peaks and a glowing spectrum for your MPC and your DAW. By BeatsbyLonza.** Free and open source (MIT).
 
-Backlit vintage VU needles, green/yellow/red LED peak meters and a glowing spectrum, made to look good on a live stream. It scales to any screen, from a laptop to a 4K TV.
-
-## Six faces
-
-Click the face buttons at the bottom, press **1–6**, or use the **arrow keys** to switch between them. You can also have it change face every 30 seconds.
-
-| | Face | What's on screen |
-| --- | --- | --- |
-| 1 | **DUO** | Two big VU meters (classic cream and noir amber) with LED peaks, over the spectrum |
-| 2 | **SPECTRUM** | A giant spectrum, with the VUs in a strip on top |
-| 3 | **NEEDLES** | Just the VUs and LED peaks, as big as they go, with the black meter first |
-| 4 | **RACK** | A pair of meters for every MPC sending to the display, all at once |
-| 5 | **CONSOLE** | Tall LED towers and green, yellow and red spectrum bars |
-| 6 | **SHOWCASE** | For showing off a plugin in your DAW: a big title (set it in Settings) and three styles. **DRUMS** (key D): MPC-style pads that flash on kicks, snares, percussion and hats (caught the moment they hit, from an audio input or a DAW plugin), and a pumping kick ring. **MASTER** (key M): a stereo vectorscope, big peak and RMS numbers, stereo correlation and L/R bars. **SYNTHS** (key Y): a glowing waveform scope inside a ring of spectrum. |
-
-## Get it
-
-1. Download **ZaY-o-Nator-Mac.zip** (or **-Windows.zip**) from the [latest release](../../releases/latest) and unzip it.
-2. Double-click **Start ZaY-o-Nator.command** (on Windows, **Start ZaY-o-Nator.bat**). The first time on a Mac, right-click it and choose **Open**.
-3. The display opens in your browser. Drag that window to your extra monitor and press **F** for full screen.
-4. Press **S** for settings. Under **Listen to**, pick **Audio input on this computer**, then pick the input (Loopback, your audio interface, a mic) and the channels. Allow microphone access when your browser asks.
-
-Keep the small terminal window open while you use the display. The mouse and buttons hide after 3 seconds, so the screen stays clean on camera.
-
-### Your MPCs
-
-- **Through an audio interface or Loopback:** pick that input and the channel pair the MPC is on (for example 3–4). Use **Name shown on screen** to label it (MPC LIVE III).
-- **Over Wi-Fi:** put the **ZaY-o-Nator MPC plugin** on a track or the master of each MPC. They send their meters to the display by themselves, and each one shows up as a button and in the RACK face.
-
-### On your stream
-
-In StreamYard, share the display's window or screen, or put it full screen on your extra monitor and point a camera at it.
+Backlit vintage VU needles (classic cream or noir black), green/yellow/red LED peak meters and a spectrum that lights up with your beat.
 
 ## The MPC plugin
 
-The same VU meters, LED peaks and spectrum also run on the MPC's own screen (MPC OS 3.10.1 or later). Each release includes `ZaY-o-Nator-<version>-mpc-sdk.zip`: copy the `BeatsbyLonza - VST - ZaY-o-Nator` folder into `VST2 Plugins`. See [mpc-plugin/README.md](mpc-plugin/README.md) for the install steps, the controls (**0 VU**, **Left / Right Meter**, **Send**) and what to do if the display doesn't see the MPC.
+The meters run right on your MPC's screen (MPC OS 3.10.1 or later): Live III, XL, Live II, One, Key 37, X SE and Force. Each release includes `ZaY-o-Nator-<version>-mpc-sdk.zip`: copy the `BeatsbyLonza - VST - ZaY-o-Nator` folder into `VST2 Plugins`, or install it from the **Open MPC Plugin Manager**. See [mpc-plugin/README.md](mpc-plugin/README.md) for the install steps and the controls (**0 VU**, **Left / Right Meter**, **Send**).
 
 ## In your DAW (VST3 and AU, Mac)
 
-**ZaY-o-Nator-DAW-Plugins-Mac.zip** has the same meters as a VST3 and AU plugin for Logic, Ableton, Studio One, the MPC software and more. Put one on each track you want to show (drums, synths, master). Each one sends its meters to the display, with no Loopback needed. See [daw-plugin/README.md](daw-plugin/README.md).
+**ZaY-o-Nator-DAW-Plugins-Mac.zip** has a VST3 and an AU for Logic, Ableton, Studio One, the MPC software and more, for Apple Silicon and Intel Macs. It has seven faces:
 
-## Settings
+| Face | What's on screen |
+| --- | --- |
+| **DUO** | Two VU meters with LED peaks, over the spectrum |
+| **SPECTRUM** | The spectrum fills the window, with LED strips on the sides |
+| **NEEDLES** | Big VUs only, the black meter first |
+| **CONSOLE** | Tall LED towers and green, yellow and red bars |
+| **DRUMS** | MPC-style pads that flash on every kick, snare, perc and hat, the moment they hit, and a pumping kick ring |
+| **MASTER** | A stereo vectorscope, big peak and RMS numbers, stereo correlation and L/R bars |
+| **SYNTHS** | A glowing waveform scope inside a ring of spectrum |
 
-- **Left / right meter:** classic cream or noir amber for each VU.
-- **0 VU level:** -18, -14 or -10 dBFS (use -10 for loud beats).
-- **Accent:** gold, blue or red.
-- **Show LIVE badge**, **Show source buttons**, **Show face buttons**.
-- **Change face every 30 seconds.**
+See [daw-plugin/README.md](daw-plugin/README.md) for the install steps and controls.
 
-Settings are saved in your browser.
+## ZaY-o-Nator Display (sold separately)
+
+Both plugins work fully on their own. The **ZaY-o-Nator Display** is a separate, paid app by BeatsbyLonza for your extra monitor and live stream: full screen on any monitor or TV, every MPC and DAW track at once, and the showcase faces. Turn on **Send** in the plugins to feed it. Ask BeatsbyLonza (BeatsbyLonza.com) for details.
 
 ## For developers
 
-- `daw-plugin/` is the VST3/AU plugin for Mac DAWs (DPF).
+- `daw-plugin/` is the VST3/AU plugin for Mac DAWs, built with DPF. `daw-plugin/DrumHits.hpp` is the drum hit detector (`tests/drum_hits_test.cpp` checks it).
 - `mpc-plugin/` is the MPC plugin (Akai's MPC Plugin SDK); `tools/make_skin.py` draws its screen into `mpc-plugin/skins/`.
-- `display/` is a small Go app that serves the page (`display/web/index.html`) on `http://localhost:47910`, on this computer only.
-- MPCs send meters as UDP packets to port **47911**: `ZAYO1|<name>|peakL|peakR|rmsL|rmsR|band1,band2,...` (all in dBFS, bands bass first).
-- GitHub Actions builds the Mac and Windows downloads on every push and attaches them to each release.
+- With **Send** on, the plugins send small meter packets (never audio) on UDP port **47911**: `ZAYO1|<name>|peakL|peakR|rmsL|rmsR|band1,...,band32[|kick,snare,perc,hats]` (levels in dBFS, bands bass first; the DAW plugin adds drum hit counts).
+- GitHub Actions builds both plugins on every push and attaches them to each release.
 
-MIT licence. ZaY-o-Nator and BeatsbyLonza are names of BeatsbyLonza.
+MIT licence (the two plugins in this repository). ZaY-o-Nator and BeatsbyLonza are names of BeatsbyLonza. The ZaY-o-Nator Display is not part of this repository or its licence.

@@ -1,23 +1,17 @@
 #!/bin/sh
-# Runs the plugin in a pretend MPC next to a real ZaY-o-Nator Display and checks the
-# display receives this MPC's meters.
-# Usage: sh tests/plugin_test.sh <display binary> <plugin_host_test binary> <plugin.so>
+# Runs the plugin in a pretend MPC and checks its meter packets go out on the network
+# (what the ZaY-o-Nator Display listens for).
+# Usage: sh tests/plugin_test.sh <plugin_host_test binary> <plugin.so>
 set -e
-DISPLAY_BIN=$1 HOST=$2 PLUGIN=$3
+HOST=$1 PLUGIN=$2
+DIR=$(cd "$(dirname "$0")" && pwd)
 # broadcasts may not loop back on a build machine: point the plugin at this computer
 echo 127.0.0.1 > "$(dirname "$PLUGIN")/ZaY-o-Nator display.txt"
-"$DISPLAY_BIN" --no-open --port 47990 >/dev/null 2>&1 &
-PID=$!
-trap 'kill $PID 2>/dev/null || true' EXIT
-sleep 1
-"$HOST" "$PLUGIN" 3 &
-HPID=$!
-sleep 2
-SOURCES=$(curl -sf http://localhost:47990/api/sources)
-wait $HPID
-echo "display sees: $SOURCES"
-case "$SOURCES" in
-  *'"sources":["'*) echo "PASS  the display receives the MPC's meters" ;;
-  *) echo "FAIL  the display did not receive any meters"; exit 1 ;;
-esac
+python3 "$DIR/udp_listen.py" 4 > heard.txt &
+LPID=$!
+sleep 0.5
+"$HOST" "$PLUGIN" 3
+wait $LPID
+echo "heard: $(tr '\n' ' ' < heard.txt)"
+if [ -s heard.txt ]; then echo "PASS  the MPC plugin sends its meters"; else echo "FAIL  no meters were sent"; exit 1; fi
 exit 0

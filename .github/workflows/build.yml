@@ -9,53 +9,6 @@ on:
     types: [published]
 
 jobs:
-  display:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-      - name: Check
-        working-directory: display
-        run: |
-          test -z "$(gofmt -l .)" || { gofmt -l .; echo "::error::run gofmt"; exit 1; }
-          go vet ./...
-      - name: Build for Mac (Apple Silicon and Intel) and Windows
-        working-directory: display
-        run: |
-          B="-s -w -X main.build=${GITHUB_SHA::7}"
-          mkdir -p "../dist/mac/ZaY-o-Nator" "../dist/win/ZaY-o-Nator"
-          CGO_ENABLED=0 GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags="$B" -o "../dist/mac/ZaY-o-Nator/zayonator-display-apple-silicon" .
-          CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags="$B" -o "../dist/mac/ZaY-o-Nator/zayonator-display-intel" .
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="$B" -o "../dist/win/ZaY-o-Nator/zayonator-display.exe" .
-          cp "Start ZaY-o-Nator.command" ../README.md ../LICENSE "../dist/mac/ZaY-o-Nator/"
-          cp "Start ZaY-o-Nator.bat" ../README.md ../LICENSE "../dist/win/ZaY-o-Nator/"
-          chmod +x "../dist/mac/ZaY-o-Nator/"*.command "../dist/mac/ZaY-o-Nator/"zayonator-display-*
-          sed -i 's/\r*$/\r/' "../dist/win/ZaY-o-Nator/Start ZaY-o-Nator.bat"
-      - name: Zip (keeps the run permissions)
-        run: |
-          (cd dist/mac && zip -r -X ../ZaY-o-Nator-Mac.zip ZaY-o-Nator)
-          (cd dist/win && zip -r -X ../ZaY-o-Nator-Windows.zip ZaY-o-Nator)
-      - name: Drum hit detection in the display (same beat as the DAW plugin's test)
-        run: |
-          c++ -std=c++17 -O2 -Idaw-plugin tests/drum_hits_test.cpp -o drum_hits_test
-          DUMP=beat.f32 ./drum_hits_test
-          node tests/drum_hits_js_test.js beat.f32
-      - name: Smoke test (page, MPC meters, sources)
-        run: |
-          (cd display && go build -o ../zd .)
-          ./zd --no-open --port 47990 & sleep 1
-          curl -sf http://localhost:47990/ | grep -q "ZaY-o-Nator"
-          python3 -c "import socket;socket.socket(socket.AF_INET,socket.SOCK_DGRAM).sendto(b'ZAYO1|MPC Test|-6|-7|-18|-19|-30,-25',('127.0.0.1',47911))"
-          sleep 1
-          curl -sf http://localhost:47990/api/sources | grep -q "MPC Test"
-          echo "smoke test passed"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ZaY-o-Nator-Display
-          path: dist/*.zip
-
   # The MPC plugin, built with Akai's MPC Plugin SDK for Gen1 (arm32) and Gen2 (arm64) MPCs.
   plugin:
     runs-on: ubuntu-24.04
@@ -79,11 +32,10 @@ jobs:
         run: python sdk/tools/build.py mpc-plugin
       - name: SDK host simulator test
         run: sdk/.sdk-tools/host_sim mpc-plugin/build/native/zay-o-nator.so test --wav mpc-plugin/build/test.wav
-      - name: Plugin in a pretend MPC, sending to a real ZaY-o-Nator Display
+      - name: Plugin in a pretend MPC, sending its meters
         run: |
-          (cd display && go build -o ../zd .)
           c++ -std=c++17 -Wall -Wextra -O1 -Isdk/framework tests/plugin_host_test.cpp -ldl -lpthread -o plugin_host_test
-          sh tests/plugin_test.sh ./zd ./plugin_host_test mpc-plugin/build/native/zay-o-nator.so
+          sh tests/plugin_test.sh ./plugin_host_test mpc-plugin/build/native/zay-o-nator.so
       - name: Package
         run: python sdk/tools/package.py mpc-plugin --out dist
       - uses: actions/upload-artifact@v4
@@ -104,8 +56,8 @@ jobs:
           mkdir -p release
           python3 openmpc/tools/sdk_release.py "mpc-plugin/build/BeatsbyLonza - VST - ZaY-o-Nator" --version "$VERSION" \
             --id zay-o-nator --repo "$GITHUB_REPOSITORY" --license MIT \
-            --about "Backlit VU meters, LED peak meters and a spectrum on your MPC screen, sent over Wi-Fi to the ZaY-o-Nator Display on your Mac for your extra monitor" \
-            --requires "Wi-Fi on the MPC and the ZaY-o-Nator Display on your Mac to show it on another screen (ZaY-o-Nator-Mac in this release); the meters on the MPC work without it" \
+            --about "Backlit VU meters, LED peak meters and a spectrum on your MPC screen" \
+            --requires "Nothing: the meters run on the MPC. Wi-Fi only for the optional ZaY-o-Nator Display (sold separately by BeatsbyLonza)" \
             -o release
           for z in release/*-mpc-armv7.zip release/*-mpc-aarch64.zip; do python3 openmpc/tools/catalog_check.py "$z" --catalog; done
           python3 openmpc/tools/sdk_zip.py "release/ZaY-o-Nator-$VERSION-mpc-sdk.zip" release/*-mpc-armv7.zip release/*-mpc-aarch64.zip
@@ -128,9 +80,6 @@ jobs:
           git clone https://github.com/DISTRHO/DPF dpf
           git -C dpf checkout "$DPF_COMMIT"
           git -C dpf submodule update --init --recursive
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
       - name: Drum hit detection test (DRUMS face), loud and quiet mixes
         run: |
           c++ -std=c++17 -O2 -Wall -Idaw-plugin tests/drum_hits_test.cpp -o drum_hits_test
@@ -148,18 +97,17 @@ jobs:
         run: |
           codesign --force --deep -s - "ZaY-o-Nator.vst3"
           codesign --force --deep -s - "ZaY-o-Nator.component"
-      - name: Apple's AU validator, with a ZaY-o-Nator Display listening
+      - name: Apple's AU validator, with a meter listener running
         run: |
           mkdir -p ~/Library/Audio/Plug-Ins/Components
           cp -R "daw-plugin/bin/ZaY-o-Nator.component" ~/Library/Audio/Plug-Ins/Components/
           killall -9 AudioComponentRegistrar 2>/dev/null || true
-          (cd display && go build -o ../zd .)
-          ./zd --no-open --port 47990 > zd.log 2>&1 &
-          sleep 2
+          python3 tests/udp_listen.py 60 > heard.txt &
+          sleep 1
           auval -v aufx ZyNa Bbyl | tee auval.log
           grep -q "AU VALIDATION SUCCEEDED" auval.log
-          curl -s http://localhost:47990/api/sources | tee sources.json
-          if grep -q "DAW MASTER" sources.json; then echo "PASS  the display received the DAW plugin's meters"; else echo "NOTE  auval did not run long enough to send meters (not a failure)"; fi
+          sleep 1
+          if grep -q "DAW MASTER" heard.txt 2>/dev/null; then echo "PASS  the DAW plugin sent its meters"; else echo "NOTE  auval did not run long enough to send meters (not a failure)"; fi
       - name: Package
         run: |
           mkdir -p "dist/ZaY-o-Nator DAW Plugins"
@@ -174,7 +122,7 @@ jobs:
   # Publish a release on GitHub (tag like v1.0.0) and this attaches the downloads to it.
   release:
     if: github.event_name == 'release'
-    needs: [display, plugin, daw-plugin]
+    needs: [plugin, daw-plugin]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -186,4 +134,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Display/*.zip art/ZaY-o-Nator-Release/*.zip art/ZaY-o-Nator-DAW-Plugins-Mac/*.zip
+        run: gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber art/ZaY-o-Nator-Release/*.zip art/ZaY-o-Nator-DAW-Plugins-Mac/*.zip

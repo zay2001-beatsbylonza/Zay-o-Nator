@@ -10,7 +10,7 @@
   "category": "Effect",
   "file32": "VST/zay-o-nator-arm32.so",
   "file64": "VST/zay-o-nator-arm64.so",
-  "description": "ZaY-o-Nator: backlit VU meters, LED peak meters and a spectrum on your MPC screen, sent over Wi-Fi to the ZaY-o-Nator Display on your Mac.",
+  "description": "ZaY-o-Nator: backlit VU meters, LED peak meters and a spectrum on your MPC screen. By BeatsbyLonza.",
   "author": "BeatsbyLonza",
   "url": "https://github.com/zay2001-beatsbylonza/Zay-o-Nator",
   "license": "MIT"
