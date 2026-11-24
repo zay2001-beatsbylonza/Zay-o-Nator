@@ -148,6 +148,8 @@ footer .mid { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
   <select id="selDevice"></select>
   <label for="selPair">Channels</label>
   <select id="selPair"></select>
+  <div class="row"><input id="chkMonitor" type="checkbox"><label for="chkMonitor">Hear this input through the Mac's speakers</label></div>
+  <p style="margin-top:6px">Turn this on to hear an MPC or interface you're showing. Leave it off for Loopback of your Mac's own sound, or you'll get an echo.</p>
   <label for="txtName">Name shown on screen</label>
   <input id="txtName" type="text" maxlength="30" placeholder="MPC LIVE III">
   <label for="selLookL">Left meter</label>
@@ -174,7 +176,7 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const store = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const saved = (() => { try { return JSON.parse(store.getItem('zayonator') || '{}'); } catch (e) { return {}; } })();
-const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false, ref: 10, showTitle: '', showMode: 'drums' }, saved);
+const S = Object.assign({ source: 'demo', device: '', pair: 0, name: '', lookL: 'classic', lookR: 'noir', accent: '#e8c77a', live: true, chips: true, face: 1, faces: true, cycle: false, ref: 10, showTitle: '', showMode: 'drums', monitor: false }, saved);
 const FACES = ['DUO', 'SPECTRUM', 'NEEDLES', 'RACK', 'CONSOLE', 'SHOWCASE'];
 function save() { try { store.setItem('zayonator', JSON.stringify(S)); } catch (e) {} }
 
@@ -303,7 +305,7 @@ function buildRack() {
 (() => { let g = ''; for (let i = 1; i < 5; i++) g += `<line x1="0" y1="${i * 52}" x2="1000" y2="${i * 52}"/>`; for (let i = 1; i < 10; i++) g += `<line x1="${i * 100}" y1="0" x2="${i * 100}" y2="260"/>`; $('grid').innerHTML = g; })();
 
 // ---------- sources ----------
-let ctx = null, stream = null, anaL = null, anaR = null, anaS = null, bufL, bufR, bufS;
+let ctx = null, stream = null, anaL = null, anaR = null, anaS = null, bufL, bufR, bufS, monitorGain = null;
 let mpcFrames = {}, mpcList = [], chanCount = 2;
 const msg = (t) => { $('msg').textContent = t || ''; };
 
@@ -328,12 +330,18 @@ async function startInput() {
   split.connect(anaL, a); split.connect(anaR, b);
   const sum = ctx.createGain(); sum.gain.value = 0.5;
   split.connect(sum, a); split.connect(sum, b); sum.connect(anaS);
+  // optional: play the input through the speakers (the meters only listen otherwise)
+  const merge = ctx.createChannelMerger(2);
+  split.connect(merge, a, 0); split.connect(merge, b, 1);
+  monitorGain = ctx.createGain(); monitorGain.gain.value = S.monitor ? 1 : 0;
+  merge.connect(monitorGain); monitorGain.connect(ctx.destination);
   bufL = new Float32Array(anaL.fftSize); bufR = new Float32Array(anaR.fftSize); bufS = new Float32Array(anaS.frequencyBinCount);
   msg('');
   await listDevices();
 }
 function stopInput() {
   if (stream) stream.getTracks().forEach((t) => t.stop());
+  if (monitorGain) { monitorGain.disconnect(); monitorGain = null; }
   stream = null; anaL = anaR = anaS = null;
 }
 async function listDevices() {
@@ -390,6 +398,8 @@ function applyLook() {
   $('live').classList.toggle('off', !S.live);
 }
 $('selSource').onchange = (e) => setSource(e.target.value);
+$('chkMonitor').checked = S.monitor;
+$('chkMonitor').onchange = (e) => { S.monitor = e.target.checked; save(); if (monitorGain) monitorGain.gain.value = S.monitor ? 1 : 0; if (ctx && ctx.state === 'suspended') ctx.resume(); };
 $('selDevice').onchange = (e) => { S.device = e.target.value; S.pair = 0; save(); if (S.source === 'input') startInput(); else setSource('input'); };
 $('selPair').onchange = (e) => { S.pair = +e.target.value; save(); if (S.source === 'input') startInput(); };
 $('txtName').value = S.name;
