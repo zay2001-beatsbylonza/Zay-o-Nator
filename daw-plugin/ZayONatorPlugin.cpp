@@ -63,7 +63,7 @@ protected:
     const char* getMaker() const override { return "BeatsbyLonza"; }
     const char* getHomePage() const override { return "https://github.com/zay2001-beatsbylonza/Zay-o-Nator"; }
     const char* getLicense() const override { return "MIT"; }
-    uint32_t getVersion() const override { return d_version(1, 1, 0); }
+    uint32_t getVersion() const override { return d_version(1, 1, 1); }
 
     void initAudioPort(bool input, uint32_t index, AudioPort& port) override
     {
