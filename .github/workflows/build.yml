@@ -117,7 +117,8 @@ jobs:
 
   # The DAW plugin for the Mac: VST3 and AU, Apple Silicon and Intel in one (DPF, ISC licence).
   daw-plugin:
-    runs-on: macos-latest
+    # Intel Mac servers: GitHub's Apple Silicon ones are often too busy. It still builds for both.
+    runs-on: macos-15-intel
     env:
       DPF_COMMIT: 4238e1c7f0351bbe488d79f0899c540543ac7583
     steps:
