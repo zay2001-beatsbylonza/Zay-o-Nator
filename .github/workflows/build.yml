@@ -139,7 +139,8 @@ jobs:
       - name: Build VST3 and AU (universal)
         working-directory: daw-plugin
         run: |
-          make macos-universal-10.15 DPF_PATH=../dpf -j3
+          # NOOPT: plain -O2 for both processors (no Intel-only flags, so it builds on any Mac)
+          make macos-universal-10.15 DPF_PATH=../dpf NOOPT=true -j3
           ls bin
           lipo -info "bin/ZaY-o-Nator.vst3/Contents/MacOS/ZaY-o-Nator" "bin/ZaY-o-Nator.component/Contents/MacOS/ZaY-o-Nator"
       - name: Sign (ad hoc, so Apple Silicon will load them)
