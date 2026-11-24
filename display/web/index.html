@@ -333,8 +333,9 @@ async function startInput() {
   // optional: play the input through the speakers (the meters only listen otherwise)
   const merge = ctx.createChannelMerger(2);
   split.connect(merge, a, 0); split.connect(merge, b, 1);
-  monitorGain = ctx.createGain(); monitorGain.gain.value = S.monitor ? 1 : 0;
-  merge.connect(monitorGain); monitorGain.connect(ctx.destination);
+  monitorGain = ctx.createGain(); monitorGain.gain.value = 1;
+  merge.connect(monitorGain);
+  if (S.monitor) monitorGain.connect(ctx.destination);   // only touches the Mac's output when you ask to hear it
   bufL = new Float32Array(anaL.fftSize); bufR = new Float32Array(anaR.fftSize); bufS = new Float32Array(anaS.frequencyBinCount);
   msg('');
   await listDevices();
@@ -399,7 +400,7 @@ function applyLook() {
 }
 $('selSource').onchange = (e) => setSource(e.target.value);
 $('chkMonitor').checked = S.monitor;
-$('chkMonitor').onchange = (e) => { S.monitor = e.target.checked; save(); if (monitorGain) monitorGain.gain.value = S.monitor ? 1 : 0; if (ctx && ctx.state === 'suspended') ctx.resume(); };
+$('chkMonitor').onchange = (e) => { S.monitor = e.target.checked; save(); if (monitorGain) { try { monitorGain.disconnect(); } catch (x) {} if (S.monitor) monitorGain.connect(ctx.destination); } if (ctx && ctx.state === 'suspended') ctx.resume(); };
 $('selDevice').onchange = (e) => { S.device = e.target.value; S.pair = 0; save(); if (S.source === 'input') startInput(); else setSource('input'); };
 $('selPair').onchange = (e) => { S.pair = +e.target.value; save(); if (S.source === 'input') startInput(); };
 $('txtName').value = S.name;
